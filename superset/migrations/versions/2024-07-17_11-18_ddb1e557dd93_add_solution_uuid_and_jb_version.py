@@ -17,14 +17,14 @@
 """add solution_uuid and jb_version
 
 Revision ID: ddb1e557dd93
-Revises: 346d233b7fc2
+Revises: 02f4f7811799
 Create Date: 2024-07-17 11:18:33.257574
 
 """
 
 # revision identifiers, used by Alembic.
 revision = 'ddb1e557dd93'
-down_revision = '346d233b7fc2'
+down_revision = '02f4f7811799'
 
 from alembic import op
 import sqlalchemy as sa
