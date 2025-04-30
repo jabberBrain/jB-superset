@@ -29,7 +29,6 @@ x-superset-volumes:
   - ./docker:/app/docker
   - ./assets:/app/superset/static/jb_assets
   - superset_home:/app/superset_home
-  - ./superset:/app/superset
 
 x-common-build: &common-build
   context: .
