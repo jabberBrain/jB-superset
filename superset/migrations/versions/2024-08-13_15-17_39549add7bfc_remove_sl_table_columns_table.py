@@ -17,7 +17,7 @@
 """remove sl_table_columns_table
 
 Revision ID: 39549add7bfc
-Revises: ddb1e557dd93
+Revises: 02f4f7811799
 Create Date: 2024-08-13 15:17:23.273168
 
 """
@@ -30,7 +30,7 @@ from superset.migrations.shared.utils import has_table
 
 # revision identifiers, used by Alembic.
 revision = "39549add7bfc"
-down_revision = "ddb1e557dd93"
+down_revision = "02f4f7811799"
 
 table_name = "sl_table_columns"
 
