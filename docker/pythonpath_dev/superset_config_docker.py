@@ -18,14 +18,25 @@ FAVICONS = [{"href": "/static/jb_assets/images/jB_icon_blue.svg"}]
 FEATURE_FLAGS : dict[str, bool] = {
     "DASHBOARD_RBAC": True,
     "ENABLE_TEMPLATE_PROCESSING": True, # Enables JINJA templating for SQLs
-    "HORIZONTAL_FILTER_BAR": True
+    "HORIZONTAL_FILTER_BAR": True,
+    "DASHBOARD_ASYNC_QUERIES": True,     # kicks the queries off into Celery
+    "DASHBOARD_NATIVE_FILTERS": True
+}
+
+SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_size": 10,
+    "max_overflow": 20,
+    "pool_recycle": 1800,      # recycle idle connections every 30m
+    "pool_pre_ping": True,     # avoid stale TCP connections
 }
 
 # Custom security manager
 import logging
+import os
 from superset.custom.security import CustomSecurityManager
 from superset.custom.views import CustomIndexView
 from flask import g
+from celery.schedules import crontab
 
 log = logging.getLogger(__name__)
 
@@ -54,3 +65,30 @@ JINJA_CONTEXT_ADDONS = {
     'current_user_solution_uuid': current_user_solution_uuid,
     'current_user_jabberbrain_version': current_user_jabberbrain_version
 }
+
+
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+REDIS_CELERY_DB = os.getenv("REDIS_CELERY_DB", "0")
+REDIS_RESULTS_DB = os.getenv("REDIS_RESULTS_DB", "1")
+
+class CeleryConfig:
+    broker_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
+    imports = ("superset.sql_lab",)
+    result_backend = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
+    worker_concurrency = 4
+    worker_prefetch_multiplier = 1
+    task_acks_late = True
+    beat_schedule = {
+        "reports.scheduler": {
+            "task": "reports.scheduler",
+            "schedule": crontab(minute="*", hour="*"),
+        },
+        "reports.prune_log": {
+            "task": "reports.prune_log",
+            "schedule": crontab(minute=10, hour=0),
+        },
+    }
+
+
+CELERY_CONFIG = CeleryConfig
