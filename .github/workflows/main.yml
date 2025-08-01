@@ -1,0 +1,58 @@
+name: jabberBrain Superset Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:  
+  full-deploy:
+    name: Full Superset Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Copy full repository to server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: .
+          target: ~/jB-superset
+          strip_components: 1
+
+      - name: Create .env-local file on server
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/jB-superset/docker
+            cat << 'EOF' > .env-local
+            ${{ secrets.ENV_LOCAL }}
+            EOF
+
+      - name: Install dependencies and build frontend
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/jB-superset/superset-frontend
+            npm ci
+            npm run build
+
+      - name: Build and run Docker
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/jB-superset
+            docker-compose up -d
