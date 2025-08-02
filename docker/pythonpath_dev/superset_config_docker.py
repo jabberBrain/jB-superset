@@ -7,7 +7,7 @@ from superset.custom.models import CustomUser
 AUTH_ROLE_PUBLIC = 'Public'
 PUBLIC_ROLE_LIKE = 'Public'
 FAB_API_SWAGGER_UI = False
-APP_NAME = "jabberBrain Dashboards"
+APP_NAME = os.environ.get("APP_NAME", "jabberBrain Dashboards")
 ENABLE_PROXY_FIX = True
 
 # Specify the App icon
@@ -32,7 +32,6 @@ SQLALCHEMY_ENGINE_OPTIONS = {
 
 # Custom security manager
 import logging
-import os
 from superset.custom.security import CustomSecurityManager
 from superset.custom.views import CustomIndexView
 from flask import g
