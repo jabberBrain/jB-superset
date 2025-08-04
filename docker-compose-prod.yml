@@ -43,7 +43,7 @@ x-superset-build: &superset-build
 services:
   redis:
     image: redis:7
-    container_name: superset_cache
+    container_name: superset_cache-prod
     restart: unless-stopped
     volumes:
       - redis:/data
@@ -54,7 +54,7 @@ services:
       # Force both local and host connections to use MD5, not SCRAM
       POSTGRES_INITDB_ARGS: "--auth-local=md5 --auth-host=md5"
     image: postgres:15
-    container_name: superset_db
+    container_name: superset_db-prod
     restart: unless-stopped
     volumes:
       - db_home:/var/lib/postgresql/data
@@ -64,7 +64,7 @@ services:
     env_file: *superset-env
     image: *superset-image
     build: *superset-build
-    container_name: superset_app
+    container_name: superset_app-prod
     command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
     restart: unless-stopped
     ports:
@@ -73,7 +73,7 @@ services:
     volumes: *superset-volumes
 
   superset-init:
-    container_name: superset_init
+    container_name: superset_init-prod
     image: *superset-image
     command: ["/app/docker/docker-init.sh"]
     env_file: *superset-env
@@ -85,7 +85,7 @@ services:
   superset-worker:
     env_file: *superset-env
     image: *superset-image
-    container_name: superset_worker
+    container_name: superset_worker-prod
     command: ["/app/docker/docker-bootstrap.sh", "worker"]
     restart: unless-stopped
     depends_on: *superset-depends-on
@@ -100,7 +100,7 @@ services:
   superset-worker-beat:
     env_file: *superset-env
     image: *superset-image
-    container_name: superset_worker_beat
+    container_name: superset_worker_beat-prod
     command: ["/app/docker/docker-bootstrap.sh", "beat"]
     restart: unless-stopped
     depends_on: *superset-depends-on

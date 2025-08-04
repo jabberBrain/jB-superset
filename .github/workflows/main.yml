@@ -41,6 +41,8 @@ jobs:
     needs: build-frontend
     environment: production
     runs-on: ubuntu-latest
+    outputs:
+      image_name: ${{ steps.build-image.outputs.image }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -103,7 +105,7 @@ jobs:
       - name: Create .env File on Server
         uses: appleboy/ssh-action@v1.2.2
         env:
-          IMAGE_NAME: ${{ steps.build-and-push-docker.outputs.image }}
+          IMAGE_NAME: ${{ needs.build-and-push-docker.outputs.image_name }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
