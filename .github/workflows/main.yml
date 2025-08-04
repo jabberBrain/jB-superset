@@ -87,8 +87,23 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          source: docker-compose-prod.yml
+          target: ~/jB-superset
+
       - name: Create .env File on Server
         uses: appleboy/ssh-action@v1.2.2
+        env:
+          IMAGE_NAME: ${{ steps.build-and-push-docker.outputs.image }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
@@ -97,11 +112,10 @@ jobs:
             cd ~/jB-superset
             cat << 'EOF' > .env
             ${{ secrets.ENV }}
+            SUPERSET_IMAGE=${{ env.IMAGE_NAME }}
             EOF
 
       - name: Deploy to Server
-        env:
-          IMAGE_NAME: ${{ steps.build-and-push-docker.outputs.image }}
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.HOST }}
@@ -109,6 +123,5 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/jB-superset
-            echo "SUPERSET_IMAGE=$IMAGE_NAME" > .env
             docker-compose pull
             docker-compose -f docker-compose-prod.yml up -d --no-build

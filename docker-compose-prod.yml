@@ -29,12 +29,14 @@ x-superset-volumes:
   - superset_home:/app/superset_home
 
 x-superset-env: &superset-env
-  - path: docker/.env
-    required: true
   - path: .env
-    required: false
+    required: true
+
+x-superset-image: &superset-image
+  ${SUPERSET_IMAGE:-local/superset:prod}
+
   
-x-common-build: &common-build
+x-superset-build: &superset-build
   context: .
   dockerfile: no-frontend.Dockerfile
 
@@ -60,20 +62,19 @@ services:
 
   superset:
     env_file: *superset-env
-    build:
-      <<: *common-build
+    image: *superset-image
+    build: *superset-build
     container_name: superset_app
     command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
     restart: unless-stopped
     ports:
-      - 8088:8088
+      - "${SUPERSET_PORT}:${SUPERSET_PORT}"
     depends_on: *superset-depends-on
     volumes: *superset-volumes
 
   superset-init:
     container_name: superset_init
-    build:
-      <<: *common-build
+    image: *superset-image
     command: ["/app/docker/docker-init.sh"]
     env_file: *superset-env
     depends_on: *superset-depends-on
@@ -82,11 +83,10 @@ services:
       disable: true
 
   superset-worker:
-    build:
-      <<: *common-build
+    env_file: *superset-env
+    image: *superset-image
     container_name: superset_worker
     command: ["/app/docker/docker-bootstrap.sh", "worker"]
-    env_file: *superset-env
     restart: unless-stopped
     depends_on: *superset-depends-on
     volumes: *superset-volumes
@@ -98,11 +98,10 @@ services:
         ]
 
   superset-worker-beat:
-    build:
-      <<: *common-build
+    env_file: *superset-env
+    image: *superset-image
     container_name: superset_worker_beat
     command: ["/app/docker/docker-bootstrap.sh", "beat"]
-    env_file: *superset-env
     restart: unless-stopped
     depends_on: *superset-depends-on
     volumes: *superset-volumes
