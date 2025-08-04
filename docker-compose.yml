@@ -24,12 +24,24 @@
 x-superset-depends-on: &superset-depends-on
   - db
   - redis
+
 x-superset-volumes:
   &superset-volumes # /app/pythonpath_docker will be appended to the PYTHONPATH in the final container
+  - ./docker:/app/docker
+  - ./assets:/app/superset/static/jb_assets
   - superset_home:/app/superset_home
-  
+
+x-superset-env: &superset-env
+  - path: docker/.env
+    required: true
+  - path: .env
+    required: false
+    
 x-common-build: &common-build
   context: .
+  target: dev
+  cache_from:
+    - apache/superset-cache:3.10-slim-bookworm
 
 services:
   redis:
@@ -40,11 +52,7 @@ services:
       - redis:/data
 
   db:
-    env_file:
-      - path: docker/.env # default
-        required: true
-      - path: .env # optional override
-        required: false
+    env_file: *superset-env
     environment:
       # Force both local and host connections to use MD5, not SCRAM
       POSTGRES_INITDB_ARGS: "--auth-local=md5 --auth-host=md5"
@@ -56,15 +64,12 @@ services:
       - ./docker/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
 
   superset:
-    env_file:
-      - path: docker/.env # default
-        required: true
-      - path: .env # optional override
-        required: false
+    env_file: *superset-env
     build:
       <<: *common-build
     container_name: superset_app
     command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
+    user: "root"
     restart: unless-stopped
     ports:
       - 8088:8088
@@ -76,12 +81,9 @@ services:
     build:
       <<: *common-build
     command: ["/app/docker/docker-init.sh"]
-    env_file:
-      - path: docker/.env # default
-        required: true
-      - path: .env # optional override
-        required: false
+    env_file: *superset-env
     depends_on: *superset-depends-on
+    user: "root"
     volumes: *superset-volumes
     healthcheck:
       disable: true
@@ -91,13 +93,10 @@ services:
       <<: *common-build
     container_name: superset_worker
     command: ["/app/docker/docker-bootstrap.sh", "worker"]
-    env_file:
-      - path: docker/.env # default
-        required: true
-      - path: .env # optional override
-        required: false
+    env_file: *superset-env
     restart: unless-stopped
     depends_on: *superset-depends-on
+    user: "root"
     volumes: *superset-volumes
     healthcheck:
       test:
@@ -111,13 +110,10 @@ services:
       <<: *common-build
     container_name: superset_worker_beat
     command: ["/app/docker/docker-bootstrap.sh", "beat"]
-    env_file:
-      - path: docker/.env # default
-        required: true
-      - path: .env # optional override
-        required: false
+    env_file: *superset-env
     restart: unless-stopped
     depends_on: *superset-depends-on
+    user: "root"
     volumes: *superset-volumes
     healthcheck:
       disable: true
