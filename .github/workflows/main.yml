@@ -35,6 +35,7 @@ jobs:
 
   build-and-push-docker:
     name: Build Docker Image and Run Tests
+    needs: build-frontend
     environment: production
     runs-on: ubuntu-latest
     steps:
