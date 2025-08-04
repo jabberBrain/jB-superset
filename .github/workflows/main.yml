@@ -23,7 +23,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'superset-frontend/package-lock.json'
 
-
       - name: Install dependencies
         run: npm ci
 
@@ -56,6 +55,9 @@ jobs:
       - name: Verify artifact contents
         run: ls -R ./superset/static/assets
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -74,15 +76,16 @@ jobs:
           SHORT_SHA: ${{ github.sha }}
         run: |
           SHORT_SHA=$(echo $SHORT_SHA | cut -c 1-7)
-          docker build \
+          docker buildx build \
           --file no-frontend.Dockerfile \
           --tag $ECR_REGISTRY:$SHORT_SHA \
           --tag $ECR_REGISTRY:latest \
           --platform linux/arm64 \
+          --cache-to type=registry,ref=$ECR_REGISTRY:cache,mode=max \
+          --cache-from type=registry,ref=$ECR_REGISTRY:cache \
+          --push \
           .
-          docker push $ECR_REGISTRY:$SHORT_SHA
-          docker push $ECR_REGISTRY:latest
-          echo "image=$ECR_REGISTRY:$SHORT_SHA" >> $GITHUB_OUTPUT
+           echo "image=$ECR_REGISTRY:$SHORT_SHA" >> $GITHUB_OUTPUT
 
   deploy-to-ec2:
     name: Deploy Docker Image to Server
