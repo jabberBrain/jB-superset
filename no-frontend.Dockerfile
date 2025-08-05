@@ -44,9 +44,6 @@ COPY --chown=superset:superset superset superset
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -e .
 
-# Copy jabberBrain assets
-COPY --chown=superset:superset ./assets /app/superset/static/jb_assets
-
 # Add entrypoints, superset_config, etc
 COPY --chown=superset:superset ./docker /app/docker
 
