@@ -1,215 +1,183 @@
-<!--
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
+# jB-Superset 💻
 
-  http://www.apache.org/licenses/LICENSE-2.0
+**A customized fork of [Apache Superset](https://superset.apache.org/) for visualizing chat analytics at [jabberBrain](https://www.stats.jabberbrain.com/)**
 
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
--->
+---
 
-# Superset
+## 📖 Overview
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/apache/superset?sort=semver)](https://github.com/apache/superset/tree/latest)
-[![Build Status](https://github.com/apache/superset/workflows/Python/badge.svg)](https://github.com/apache/superset/actions)
-[![PyPI version](https://badge.fury.io/py/apache-superset.svg)](https://badge.fury.io/py/apache-superset)
-[![Coverage Status](https://codecov.io/github/apache/superset/coverage.svg?branch=master)](https://codecov.io/github/apache/superset)
-[![PyPI](https://img.shields.io/pypi/pyversions/apache-superset.svg?maxAge=2592000)](https://pypi.python.org/pypi/apache-superset)
-[![Get on Slack](https://img.shields.io/badge/slack-join-orange.svg)](http://bit.ly/join-superset-slack)
-[![Documentation](https://img.shields.io/badge/docs-apache.org-blue.svg)](https://superset.apache.org)
+**jB-Superset** is a tailored version of Apache Superset, designed to visualize and analyze data from chat sessions, agent activity, user feedback, and related KPIs. It features enhanced integrations that bridge Superset with internal chat tools, enabling direct navigation from dashboards to relevant chats. Built for both internal analytics and client reporting, it offers:
 
-<picture width="500">
-  <source
-    width="600"
-    media="(prefers-color-scheme: dark)"
-    src="https://superset.apache.org/img/superset-logo-horiz-dark.svg"
-    alt="Superset logo (dark)"
-  />
-  <img
-    width="600"
-    src="https://superset.apache.org/img/superset-logo-horiz-apache.svg"
-    alt="Superset logo (light)"
-  />
-</picture>
+* **📊 Chat Platform Integration**: Seamlessly link dashboards with chat solutions.
+* **📂 Automatic Backups**: Protect PostgreSQL metadata with automated backups in production.
+* **⚙️ Optimized Configs**: Preconfigured for development, staging, and production via Docker Compose and Github Actions.
 
-A modern, enterprise-ready business intelligence web application.
+---
 
-[**Why Superset?**](#why-superset) |
-[**Supported Databases**](#supported-databases) |
-[**Installation and Configuration**](#installation-and-configuration) |
-[**Release Notes**](https://github.com/apache/superset/blob/master/RELEASING/README.md#release-notes-for-recent-releases) |
-[**Get Involved**](#get-involved) |
-[**Contributor Guide**](#contributor-guide) |
-[**Resources**](#resources) |
-[**Organizations Using Superset**](https://github.com/apache/superset/blob/master/RESOURCES/INTHEWILD.md)
+## 🛠️ Technologies Used
 
-## Why Superset?
+| Technology                                                  | Purpose                            |
+| ----------------------------------------------------------- | ---------------------------------- |
+| [Python (Flask, SQLAlchemy)](https://www.python.org/)       | Backend framework & ORM            |
+| [JavaScript (React, Webpack)](https://reactjs.org/)         | Frontend UI for dashboards         |
+| [Node.js](https://nodejs.org/)                              | Build frontend assets              |
+| [PostgreSQL](https://www.postgresql.org/)                   | Metadata database                  |
+| [Redis](https://redis.io/)                                  | Caching and async queues           |
+| [Celery](https://docs.celeryq.dev/)                         | Task scheduling & background jobs  |
+| [Docker + Docker Compose](https://docs.docker.com/compose/) | Containerization and orchestration |
 
-Superset is a modern data exploration and data visualization platform. Superset can replace or augment proprietary business intelligence tools for many teams. Superset integrates well with a variety of data sources.
+---
 
-Superset provides:
+## 🚀 Getting Started
 
-- A **no-code interface** for building charts quickly
-- A powerful, web-based **SQL Editor** for advanced querying
-- A **lightweight semantic layer** for quickly defining custom dimensions and metrics
-- Out of the box support for **nearly any SQL** database or data engine
-- A wide array of **beautiful visualizations** to showcase your data, ranging from simple bar charts to geospatial visualizations
-- Lightweight, configurable **caching layer** to help ease database load
-- Highly extensible **security roles and authentication** options
-- An **API** for programmatic customization
-- A **cloud-native architecture** designed from the ground up for scale
+### 📚 Development Environment
 
-## Screenshots & Gifs
+This setup is ideal for building and testing new features. It uses `docker-compose.yml` and produces a larger image (\~5GB) with full dev dependencies.
 
-**Video Overview**
-<!-- File hosted here https://github.com/apache/superset-site/raw/lfs/superset-video-4k.mp4 -->
-[superset-video-4k.webm](https://github.com/apache/superset/assets/812905/da036bc2-150c-4ee7-80f9-75e63210ff76)
+**Steps:**
 
-<br/>
+1. **Clone the repository:**
 
-**Large Gallery of Visualizations**
+   ```bash
+   git clone https://github.com/jabberBrain/jb-superset.git
+   cd jb-superset
+   ```
 
-<kbd><img title="Gallery" src="https://superset.apache.org/img/screenshots/gallery.jpg"/></kbd><br/>
+2. **Configure environment variables:**
 
-**Craft Beautiful, Dynamic Dashboards**
+   * Defaults are in `/docker/.env`
+   * To override, create `/docker/.env-local`
+   * Do not edit `/docker/.env` directly
 
-<kbd><img title="View Dashboards" src="https://superset.apache.org/img/screenshots/slack_dash.jpg"/></kbd><br/>
+3. **Start the containers:**
 
-**No-Code Chart Builder**
+   ```bash
+   docker compose up -d
+   ```
 
-<kbd><img title="Slice & dice your data" src="https://superset.apache.org/img/screenshots/explore.jpg"/></kbd><br/>
+   * This builds the Superset image and runs `npm ci && npm run build` for the frontend
+   * If the build fails, increase Docker's memory allocation and retry
 
-**Powerful SQL Editor**
+4. **Access Superset:**
 
-<kbd><img title="SQL Lab" src="https://superset.apache.org/img/screenshots/sql_lab.jpg"/></kbd><br/>
+   * Navigate to [http://localhost:8088](http://localhost:8088) or the port defined in `.env`
+   * Login with user `admin` and password `admin`.
 
-## Supported Databases
+---
 
-Superset can query data from any SQL-speaking datastore or data engine (Presto, Trino, Athena, [and more](https://superset.apache.org/docs/configuration/databases)) that has a Python DB-API driver and a SQLAlchemy dialect.
+### 🏠 Production-like Environment (Local)
 
-Here are some of the major database solutions that are supported:
+Uses `docker-compose-local.yml` for a lighter-weight setup (\~1.5GB) without backups, useful for staging or client demos.
 
-<p align="center">
-  <img src="https://superset.apache.org/img/databases/redshift.png" alt="redshift" border="0" width="200"/>
-  <img src="https://superset.apache.org/img/databases/google-biquery.png" alt="google-biquery" border="0" width="200"/>
-  <img src="https://superset.apache.org/img/databases/snowflake.png" alt="snowflake" border="0" width="200"/>
-  <img src="https://superset.apache.org/img/databases/trino.png" alt="trino" border="0" width="150" />
-  <img src="https://superset.apache.org/img/databases/presto.png" alt="presto" border="0" width="200"/>
-  <img src="https://superset.apache.org/img/databases/databricks.png" alt="databricks" border="0" width="160" />
-  <img src="https://superset.apache.org/img/databases/druid.png" alt="druid" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/firebolt.png" alt="firebolt" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/timescale.png" alt="timescale" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/rockset.png" alt="rockset" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/postgresql.png" alt="postgresql" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/mysql.png" alt="mysql" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/mssql-server.png" alt="mssql-server" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/ibm-db2.svg" alt="db2" border="0" width="220" />
-  <img src="https://superset.apache.org/img/databases/sqlite.png" alt="sqlite" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/sybase.png" alt="sybase" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/mariadb.png" alt="mariadb" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/vertica.png" alt="vertica" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/oracle.png" alt="oracle" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/firebird.png" alt="firebird" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/greenplum.png" alt="greenplum" border="0" width="200"  />
-  <img src="https://superset.apache.org/img/databases/clickhouse.png" alt="clickhouse" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/exasol.png" alt="exasol" border="0" width="160" />
-  <img src="https://superset.apache.org/img/databases/monet-db.png" alt="monet-db" border="0" width="200"  />
-  <img src="https://superset.apache.org/img/databases/apache-kylin.png" alt="apache-kylin" border="0" width="80"/>
-  <img src="https://superset.apache.org/img/databases/hologres.png" alt="hologres" border="0" width="80"/>
-  <img src="https://superset.apache.org/img/databases/netezza.png" alt="netezza" border="0" width="80"/>
-  <img src="https://superset.apache.org/img/databases/pinot.png" alt="pinot" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/teradata.png" alt="teradata" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/yugabyte.png" alt="yugabyte" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/databend.png" alt="databend" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/starrocks.png" alt="starrocks" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/doris.png" alt="doris" border="0" width="200" />
-  <img src="https://superset.apache.org/img/databases/oceanbase.svg" alt="oceanbase" border="0" width="220" />
-</p>
+**Steps:**
 
-**A more comprehensive list of supported databases** along with the configuration instructions can be found [here](https://superset.apache.org/docs/configuration/databases).
+1. **Clone the repository:**
 
-Want to add support for your datastore or data engine? Read more [here](https://superset.apache.org/docs/frequently-asked-questions#does-superset-work-with-insert-database-engine-here) about the technical requirements.
+   ```bash
+   git clone https://github.com/jabberBrain/jb-superset.git
+   cd jb-superset
+   ```
 
-## Installation and Configuration
+2. **Build the frontend manually:**
 
-[Extended documentation for Superset](https://superset.apache.org/docs/installation/docker-compose)
+   ```bash
+   cd superset-frontend
+   npm ci
+   npm run build
+   cd ..
+   ```
 
-## Get Involved
+3. **Set up environment variables:**
 
-- Ask and answer questions on [StackOverflow](https://stackoverflow.com/questions/tagged/apache-superset) using the **apache-superset** tag
-- [Join our community's Slack](http://bit.ly/join-superset-slack)
-  and please read our [Slack Community Guidelines](https://github.com/apache/superset/blob/master/CODE_OF_CONDUCT.md#slack-community-guidelines)
-- [Join our dev@superset.apache.org Mailing list](https://lists.apache.org/list.html?dev@superset.apache.org). To join, simply send an email to [dev-subscribe@superset.apache.org](mailto:dev-subscribe@superset.apache.org)
-- If you want to help troubleshoot GitHub Issues involving the numerous database drivers that Superset supports, please consider adding your name and the databases you have access to on the [Superset Database Familiarity Rolodex](https://docs.google.com/spreadsheets/d/1U1qxiLvOX0kBTUGME1AHHi6Ywel6ECF8xk_Qy-V9R8c/edit#gid=0)
-- Join Superset's Town Hall and [Operational Model](https://preset.io/blog/the-superset-operational-model-wants-you/) recurring meetings.  Meeting info is available on the [Superset Community Calendar](https://superset.apache.org/community)
+   ```bash
+   cp /docker/.env .env
+   # Edit .env with secrets or custom settings
+   ```
 
-## Contributor Guide
+4. **Start the services:**
 
-Interested in contributing? Check out our
-[CONTRIBUTING.md](https://github.com/apache/superset/blob/master/CONTRIBUTING.md)
-to find resources around contributing along with a detailed guide on
-how to set up a development environment.
+   ```bash
+   docker compose -f docker-compose-local.yml up -d
+   ```
 
-## Resources
+5. **Access Superset:**
 
-- [Superset "In the Wild"](https://github.com/apache/superset/blob/master/RESOURCES/INTHEWILD.md) - open a PR to add your org to the list!
-- [Feature Flags](https://github.com/apache/superset/blob/master/RESOURCES/FEATURE_FLAGS.md) - the status of Superset's Feature Flags.
-- [Standard Roles](https://github.com/apache/superset/blob/master/RESOURCES/STANDARD_ROLES.md) - How RBAC permissions map to roles.
-- [Superset Wiki](https://github.com/apache/superset/wiki) - Tons of additional community resources: best practices, community content and other information.
-- [Superset SIPs](https://github.com/orgs/apache/projects/170) - The status of Superset's SIPs (Superset Improvement Proposals) for both consensus and implementation status.
+   * [http://localhost:8088](http://localhost:8088) or as defined in `.env`
+   * Login with user `admin` and password `admin`.
 
-Understanding the Superset Points of View
+---
 
-- [The Case for Dataset-Centric Visualization](https://preset.io/blog/dataset-centric-visualization/)
-- [Understanding the Superset Semantic Layer](https://preset.io/blog/understanding-superset-semantic-layer/)
+### 📆 Production Environment
 
-- Getting Started with Superset
-  - [Superset in 2 Minutes using Docker Compose](https://superset.apache.org/docs/installation/docker-compose#installing-superset-locally-using-docker-compose)
-  - [Installing Database Drivers](https://superset.apache.org/docs/configuration/databases#installing-database-drivers)
-  - [Building New Database Connectors](https://preset.io/blog/building-database-connector/)
-  - [Create Your First Dashboard](https://superset.apache.org/docs/using-superset/creating-your-first-dashboard/)
-  - [Comprehensive Tutorial for Contributing Code to Apache Superset
-  ](https://preset.io/blog/tutorial-contributing-code-to-apache-superset/)
-- [Resources to master Superset by Preset](https://preset.io/resources/)
+This mode runs with backups and production optimizations using `docker-compose-prod.yml`.
 
-- Deploying Superset
-  - [Official Docker image](https://hub.docker.com/r/apache/superset)
-  - [Helm Chart](https://github.com/apache/superset/tree/master/helm/superset)
+**Steps:**
 
-- Recordings of Past [Superset Community Events](https://preset.io/events)
-  - [Mixed Time Series Charts](https://preset.io/events/mixed-time-series-visualization-in-superset-workshop/)
-  - [How the Bing Team Customized Superset for the Internal Self-Serve Data & Analytics Platform](https://preset.io/events/how-the-bing-team-heavily-customized-superset-for-their-internal-data/)
-  - [Live Demo: Visualizing MongoDB and Pinot Data using Trino](https://preset.io/events/2021-04-13-visualizing-mongodb-and-pinot-data-using-trino/)
-  - [Introduction to the Superset API](https://preset.io/events/introduction-to-the-superset-api/)
-  - [Building a Database Connector for Superset](https://preset.io/events/2021-02-16-building-a-database-connector-for-superset/)
+1. **Clone the repository:**
 
-- Visualizations
-  - [Creating Viz Plugins](https://superset.apache.org/docs/contributing/creating-viz-plugins/)
-  - [Managing and Deploying Custom Viz Plugins](https://medium.com/nmc-techblog/apache-superset-manage-custom-viz-plugins-in-production-9fde1a708e55)
-  - [Why Apache Superset is Betting on Apache ECharts](https://preset.io/blog/2021-4-1-why-echarts/)
+   ```bash
+   git clone https://github.com/jabberBrain/jb-superset.git
+   cd jb-superset
+   ```
 
-- [Superset API](https://superset.apache.org/docs/rest-api)
+2. **Build frontend manually (if building locally):**
 
-## Repo Activity
+   ```bash
+   cd superset-frontend
+   npm ci
+   npm run build
+   cd ..
+   ```
 
-<a href="https://next.ossinsight.io/widgets/official/compose-last-28-days-stats?repo_id=39464018" target="_blank" align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-last-28-days-stats/thumbnail.png?repo_id=39464018&image_size=auto&color_scheme=dark" width="655" height="auto" />
-    <img alt="Performance Stats of apache/superset - Last 28 days" src="https://next.ossinsight.io/widgets/official/compose-last-28-days-stats/thumbnail.png?repo_id=39464018&image_size=auto&color_scheme=light" width="655" height="auto" />
-  </picture>
-</a>
+3. **Set up environment variables:**
 
-<!-- Made with [OSS Insight](https://ossinsight.io/) -->
+   ```bash
+   cp /docker/.env .env
+   # Specify SUPERSET_IMAGE if using a pre-built image
+   ```
 
-<!-- telemetry/analytics pixel: -->
-<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=bc1c90cd-bc04-4e11-8c7b-289fb2839492" />
+4. **Start production services:**
+
+   ```bash
+   docker compose -f docker-compose-prod.yml up -d
+   ```
+
+5. **Access Superset:**
+
+   * As configured in `.env` (default: [http://localhost:8088](http://localhost:8088))
+   * Login with user `admin` and password `admin`.
+
+---
+
+## 💾 Backup Strategy
+
+In production, the PostgreSQL metadata is automatically backed up at regular intervals. This ensures that dashboards, charts, and configurations can be recovered in case of system failure.
+
+---
+
+## 📅 Branching Strategy
+
+| Branch        | Purpose                                |
+| ------------- | -------------------------------------- |
+| `development` | Active development and feature testing |
+| `main`        | Production-ready, stable releases      |
+
+* Always commit to `development` or feature branches.
+* Only merge into `main` after passing QA and staging tests.
+
+---
+
+## 📚 Documentation
+
+* **Apache Superset Docs**: [https://superset.apache.org/docs](https://superset.apache.org/docs)
+* **jB-Superset Internal Docs**: Refer to your team wiki or documentation hub
+
+---
+
+## 🧰 CI/CD Pipeline
+
+This repository uses **GitHub Actions** to automate builds and deployments:
+
+* **Push to `main`**: Triggers deployment to the production environment. We will also run jest in the future.
+* **Push to `development`**: In the future we might run tests.
+* Future work includes integrating automated testing into the pipeline
