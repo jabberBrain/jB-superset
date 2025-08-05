@@ -43,7 +43,7 @@ x-superset-build: &superset-build
 services:
   redis:
     image: redis:7
-    container_name: superset_cache-prod
+    container_name: superset_cache
     restart: unless-stopped
     volumes:
       - redis:/data
@@ -54,7 +54,7 @@ services:
       # Force both local and host connections to use MD5, not SCRAM
       POSTGRES_INITDB_ARGS: "--auth-local=md5 --auth-host=md5"
     image: postgres:15
-    container_name: superset_db-prod
+    container_name: superset_db
     restart: unless-stopped
     volumes:
       - db_home:/var/lib/postgresql/data
@@ -64,7 +64,7 @@ services:
     env_file: *superset-env
     image: *superset-image
     build: *superset-build
-    container_name: superset_app-prod
+    container_name: superset_app
     command: ["/app/docker/docker-bootstrap.sh", "app-gunicorn"]
     restart: unless-stopped
     ports:
@@ -73,7 +73,7 @@ services:
     volumes: *superset-volumes
 
   superset-init:
-    container_name: superset_init-prod
+    container_name: superset_init
     image: *superset-image
     command: ["/app/docker/docker-init.sh"]
     env_file: *superset-env
@@ -85,7 +85,7 @@ services:
   superset-worker:
     env_file: *superset-env
     image: *superset-image
-    container_name: superset_worker-prod
+    container_name: superset_worker
     command: ["/app/docker/docker-bootstrap.sh", "worker"]
     restart: unless-stopped
     depends_on: *superset-depends-on
@@ -100,13 +100,40 @@ services:
   superset-worker-beat:
     env_file: *superset-env
     image: *superset-image
-    container_name: superset_worker_beat-prod
+    container_name: superset_worker_beat
     command: ["/app/docker/docker-bootstrap.sh", "beat"]
     restart: unless-stopped
     depends_on: *superset-depends-on
     volumes: *superset-volumes
     healthcheck:
       disable: true
+
+  superset-backup:
+    container_name: superset_backup
+    image: tiredofit/db-backup:4.1.19
+    depends_on:
+      - db
+    volumes:
+      - ../backups/:/backup
+    environment:
+      - DB_TYPE=pgsql
+      - DEFAULT_COMPRESSION=GZ
+      - BACKUP_JOB_CONCURRENCY=1
+      - DB_HOST=${DATABASE_HOST}
+      - DBFA_HOST=${DATABASE_HOST}
+      - DB_NAME=${DATABASE_DB}
+      - DEFAULT_PORT=${DATABASE_PORT}
+      - DB_USER=${DATABASE_USER}
+      - DB_PASS=${DATABASE_PASSWORD}
+
+      - DEFAULT_BACKUP_BEGIN=+60 # backup starts in 1 hour
+      - DEFAULT_BACKUP_INTERVAL=${BACKUP_FREQUENCY:-1440} # backup 24 hours (minutes)
+      - DEFAULT_CLEANUP_TIME=${CLEANUP_FREQUENCY:-4500} # clean backups that are older than 3 days
+      - MANUAL_RUN_FOREVER=FALSE
+      - CONTAINER_ENABLE_MONITORING=FALSE
+      - DEFAULT_BACKUP_LOCTION=FILESYSTEM
+      - DEFAULT_CHECKSUM=NONE
+    restart: unless-stopped
 
 volumes:
   superset_home:
