@@ -35,7 +35,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       build-essential \
     && pip install --upgrade setuptools pip \
     && pip install -r requirements/base.txt \
-    && pip install psycopg2-binary \
     && apt-get autoremove -yqq --purge build-essential \
     && rm -rf /var/lib/apt/lists/*
 

@@ -55,6 +55,13 @@ jobs:
       - name: Verify artifact contents
         run: ls -R ./superset/static/assets
 
+      - name: Add Local Requirements
+        run: |
+          cd docker
+          cat << 'EOF' > requirements-local.txt
+          ${{ vars.REQUIREMENTS }}
+          EOF
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
