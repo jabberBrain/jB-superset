@@ -43,9 +43,6 @@ COPY --chown=superset:superset superset superset
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -e .
 
-# Add entrypoints, superset_config, etc
-COPY --chown=superset:superset ./docker /app/docker
-
 # Compile translations for the backend - this generates .mo files, then deletes the .po files
 COPY ./scripts/translations/generate_mo_files.sh ./scripts/translations/
 RUN ./scripts/translations/generate_mo_files.sh \

@@ -55,13 +55,6 @@ jobs:
       - name: Verify artifact contents
         run: ls -R ./superset/static/assets
 
-      - name: Add Local Requirements
-        run: |
-          cd docker
-          cat << 'EOF' > requirements-local.txt
-          ${{ vars.REQUIREMENTS }}
-          EOF
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -106,7 +99,29 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy files to server
+      - name: Create min_docker Folder
+        run: |
+          mkdir min_docker
+          cp -r docker/pythonpath_dev docker/docker-bootstrap.sh docker/docker-init.sh min_docker/
+
+      - name: Add Local Requirements
+        run: |
+          cd min_docker
+          cat << 'EOF' > requirements-local.txt
+          ${{ vars.REQUIREMENTS }}
+          EOF
+
+      - name: Copy min_docker to server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          source: min_docker
+          target: ~/jB-superset
+
+      - name: Copy docker-compose-prod to server
         uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.HOST }}
@@ -115,6 +130,17 @@ jobs:
           port: 22
           source: docker-compose-prod.yml
           target: ~/jB-superset
+
+      - name: Rename files
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/jB-superset
+            mv docker-compose-prod.yml docker-compose.yml
+            mv min_docker docker
 
       - name: Create .env File on Server
         uses: appleboy/ssh-action@v1.2.2
@@ -126,7 +152,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/jB-superset
-            mv docker-compose-prod.yml docker-compose.yml
             cat << 'EOF' > .env
             ${{ secrets.ENV }}
             SUPERSET_IMAGE=${{ env.IMAGE_NAME }}
