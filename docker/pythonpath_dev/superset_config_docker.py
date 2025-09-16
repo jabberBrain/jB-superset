@@ -20,8 +20,11 @@ FEATURE_FLAGS : dict[str, bool] = {
     "ENABLE_TEMPLATE_PROCESSING": True, # Enables JINJA templating for SQLs
     "HORIZONTAL_FILTER_BAR": True,
     "DASHBOARD_ASYNC_QUERIES": True,     # kicks the queries off into Celery
-    "DASHBOARD_NATIVE_FILTERS": True
+    "DASHBOARD_NATIVE_FILTERS": True,
+    "ALERT_REPORTS": True,
+    "DATE_FORMAT_IN_EMAIL_SUBJECT": True
 }
+ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
 
 SQLALCHEMY_ENGINE_OPTIONS = {
     "pool_size": 10,
@@ -29,6 +32,43 @@ SQLALCHEMY_ENGINE_OPTIONS = {
     "pool_recycle": 1800,      # recycle idle connections every 30m
     "pool_pre_ping": True,     # avoid stale TCP connections
 }
+
+# Email configuration
+SMTP_HOST = os.environ.get("SMTP_HOST")
+SMTP_PORT = os.environ.get("SMTP_PORT")
+SMTP_STARTTLS = os.environ.get("SMTP_TLS")
+SMTP_SSL_SERVER_AUTH = True # If you're using an SMTP server with a valid certificate
+SMTP_SSL = os.environ.get("SMTP_SSL")
+SMTP_USER = os.environ.get("SMTP_USER")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
+EMAIL_REPORTS_SUBJECT_PREFIX = os.environ.get("EMAIL_REPORTS_SUBJECT", "Report") # optional - overwrites default value in config.py of "[Report] "
+
+# Custom OAuth Setup with Authentik
+from flask_appbuilder.security.manager import AUTH_OAUTH
+
+AUTH_TYPE = AUTH_OAUTH
+OAUTH_PROVIDERS = [
+    {
+        'name': 'authentik',
+        'icon': 'fa-sign-in',  # Optional icon
+        'token_key': 'access_token',
+        'remote_app': {
+            'consumer_key': 'your-client-id-from-authentik',
+            'consumer_secret': 'your-client-secret-from-authentik',
+            'request_token_params': {'scope': 'openid profile email'},
+            'base_url': 'https://authentik-domain/application/o/',
+            'access_token_url': 'https://authentik-domain/application/o/token/',
+            'authorize_url': 'https://authentik-domain/application/o/authorize/',
+        }
+    }
+]
+
+AUTH_USER_REGISTRATION = False  # User registration is handled from Authentik
+
+from superset.tasks.types import FixedExecutor
+
+ALERT_REPORTS_EXECUTORS = [FixedExecutor("admin")]
 
 # Custom security manager
 import logging

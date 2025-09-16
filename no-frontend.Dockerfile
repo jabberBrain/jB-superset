@@ -27,6 +27,18 @@ RUN mkdir -p ${PYTHONPATH} superset/static requirements superset-frontend apache
 
 COPY --chown=superset:superset pyproject.toml setup.py MANIFEST.in README.md ./
 
+# Install GeckoDriver WebDriver
+ARG GECKODRIVER_VERSION=v0.34.0 \
+    FIREFOX_VERSION=125.0.3
+
+RUN apt-get update -qq \
+    && apt-get install -yqq --no-install-recommends wget bzip2 \
+    && wget -q https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz -O - | tar xfz - -C /usr/local/bin \
+    # Install Firefox
+    && wget -q https://download-installer.cdn.mozilla.net/pub/firefox/releases/${FIREFOX_VERSION}/linux-x86_64/en-US/firefox-${FIREFOX_VERSION}.tar.bz2 -O - | tar xfj - -C /opt \
+    && ln -s /opt/firefox/firefox /usr/local/bin/firefox \
+    && apt-get autoremove -yqq --purge wget bzip2 && rm -rf /var/[log,tmp]/* /tmp/* /var/lib/apt/lists/*
+
 # setup.py uses the version information in package.json
 COPY --chown=superset:superset superset-frontend/package.json superset-frontend/
 COPY --chown=superset:superset requirements/base.txt requirements/
