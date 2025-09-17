@@ -44,26 +44,6 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
 SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
 EMAIL_REPORTS_SUBJECT_PREFIX = os.environ.get("EMAIL_REPORTS_SUBJECT", "Report") # optional - overwrites default value in config.py of "[Report] "
 
-# Custom OAuth Setup with Authentik
-from flask_appbuilder.security.manager import AUTH_OAUTH
-
-AUTH_TYPE = AUTH_OAUTH
-OAUTH_PROVIDERS = [
-    {
-        'name': 'authentik',
-        'icon': 'fa-sign-in',  # Optional icon
-        'token_key': 'access_token',
-        'remote_app': {
-            'consumer_key': 'your-client-id-from-authentik',
-            'consumer_secret': 'your-client-secret-from-authentik',
-            'request_token_params': {'scope': 'openid profile email'},
-            'base_url': 'https://authentik-domain/application/o/',
-            'access_token_url': 'https://authentik-domain/application/o/token/',
-            'authorize_url': 'https://authentik-domain/application/o/authorize/',
-        }
-    }
-]
-
 AUTH_USER_REGISTRATION = False  # User registration is handled from Authentik
 
 
@@ -137,15 +117,10 @@ SCREENSHOT_LOAD_WAIT = 600
 # WebDriver configuration
 # If you use Firefox, you can stick with default values
 # If you use Chrome, then add the following WEBDRIVER_TYPE and WEBDRIVER_OPTION_ARGS
-WEBDRIVER_TYPE = "firefox"
 
 # This is for internal use, you can keep http
 WEBDRIVER_BASEURL = "http://superset_app:8088" # When running using docker compose use "http://superset_app:8088'
 # This is the link sent to the recipient. Change to your domain, e.g. https://superset.mydomain.com
 WEBDRIVER_BASEURL_USER_FRIENDLY = "http://localhost:8088"
-
-from superset.tasks.types import FixedExecutor
-
-ALERT_REPORTS_EXECUTORS = [FixedExecutor("admin")]
 
 CELERY_CONFIG = CeleryConfig
