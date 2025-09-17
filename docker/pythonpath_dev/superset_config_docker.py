@@ -66,9 +66,6 @@ OAUTH_PROVIDERS = [
 
 AUTH_USER_REGISTRATION = False  # User registration is handled from Authentik
 
-from superset.tasks.types import FixedExecutor
-
-ALERT_REPORTS_EXECUTORS = [FixedExecutor("admin")]
 
 # Custom security manager
 import logging
@@ -109,15 +106,20 @@ JINJA_CONTEXT_ADDONS = {
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 REDIS_CELERY_DB = os.getenv("REDIS_CELERY_DB", "0")
-REDIS_RESULTS_DB = os.getenv("REDIS_RESULTS_DB", "1")
+REDIS_RESULTS_DB = os.getenv("REDIS_RESULTS_DB", "0")
 
 class CeleryConfig:
     broker_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
     imports = ("superset.sql_lab",)
     result_backend = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
     worker_concurrency = 4
-    worker_prefetch_multiplier = 1
+    worker_prefetch_multiplier = 10
     task_acks_late = True
+    task_annotations = {
+        "sql_lab.get_sql_results": {
+            "rate_limit": "100/s",
+        },
+    }
     beat_schedule = {
         "reports.scheduler": {
             "task": "reports.scheduler",
@@ -125,9 +127,25 @@ class CeleryConfig:
         },
         "reports.prune_log": {
             "task": "reports.prune_log",
-            "schedule": crontab(minute=10, hour=0),
+            "schedule": crontab(minute=0, hour=0),
         },
     }
 
+SCREENSHOT_LOCATE_WAIT = 100
+SCREENSHOT_LOAD_WAIT = 600
+
+# WebDriver configuration
+# If you use Firefox, you can stick with default values
+# If you use Chrome, then add the following WEBDRIVER_TYPE and WEBDRIVER_OPTION_ARGS
+WEBDRIVER_TYPE = "firefox"
+
+# This is for internal use, you can keep http
+WEBDRIVER_BASEURL = "http://superset_app:8088" # When running using docker compose use "http://superset_app:8088'
+# This is the link sent to the recipient. Change to your domain, e.g. https://superset.mydomain.com
+WEBDRIVER_BASEURL_USER_FRIENDLY = "http://localhost:8088"
+
+from superset.tasks.types import FixedExecutor
+
+ALERT_REPORTS_EXECUTORS = [FixedExecutor("admin")]
 
 CELERY_CONFIG = CeleryConfig
