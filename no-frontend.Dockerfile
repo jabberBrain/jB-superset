@@ -27,29 +27,6 @@ RUN mkdir -p ${PYTHONPATH} superset/static requirements superset-frontend apache
 
 COPY --chown=superset:superset pyproject.toml setup.py MANIFEST.in README.md ./
 
-# Install GeckoDriver WebDriver and Firefox
-ARG GECKODRIVER_VERSION=v0.34.0 \
-    FIREFOX_VERSION=137.0.1
-
-RUN apt-get update -qq \
-    && apt-get install -yqq --no-install-recommends wget bzip2 xz-utils \
-    && ARCH=$(uname -m) \
-    && if [ "$ARCH" = "x86_64" ]; then \
-        GECKODRIVER_URL="https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz"; \
-        FIREFOX_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/${FIREFOX_VERSION}/linux-x86_64/en-US/firefox-${FIREFOX_VERSION}.tar.bz2"; \
-        TAR_EXTRACT="tar xfj"; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        GECKODRIVER_URL="https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux-aarch64.tar.gz"; \
-        FIREFOX_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/${FIREFOX_VERSION}/linux-aarch64/en-US/firefox-${FIREFOX_VERSION}.tar.xz"; \
-        TAR_EXTRACT="tar xfJ"; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi \
-    && wget -q "$GECKODRIVER_URL" -O - | tar xfz - -C /usr/local/bin \
-    && wget -q "$FIREFOX_URL" -O - | $TAR_EXTRACT - -C /opt \
-    && ln -s /opt/firefox/firefox /usr/local/bin/firefox \
-    && apt-get autoremove -yqq --purge wget bzip2 xz-utils \
-    && rm -rf /var/[log,tmp]/* /tmp/* /var/lib/apt/lists/*
 
 # setup.py uses the version information in package.json
 COPY --chown=superset:superset superset-frontend/package.json superset-frontend/
@@ -75,6 +52,38 @@ RUN ./scripts/translations/generate_mo_files.sh \
     && rm superset/translations/*/LC_MESSAGES/*.po
 
 COPY --chmod=755 ./docker/run-server.sh /usr/bin/
+
+USER root
+
+# Set environment variable for Playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers
+
+# Install packages using uv into the virtual environment
+# Superset started using uv after the 4.1 branch; if you are building from apache/superset:4.1.x or an older version,
+# replace the first two lines with RUN pip install \
+RUN . /app/.venv/bin/activate && \
+    uv pip install \
+    # install psycopg2 for using PostgreSQL metadata store - could be a MySQL package if using that backend:
+    psycopg2-binary \
+    # add the driver(s) for your data warehouse(s), in this example we're showing for Microsoft SQL Server:
+    pymssql \
+    # package needed for using single-sign on authentication:
+    Authlib \
+    # openpyxl to be able to upload Excel files
+    openpyxl \
+    # Pillow for Alerts & Reports to generate PDFs of dashboards
+    Pillow \
+    # install Playwright for taking screenshots for Alerts & Reports. This assumes the feature flag PLAYWRIGHT_REPORTS_AND_THUMBNAILS is enabled
+    # That feature flag will default to True starting in 6.0.0
+    # Playwright works only with Chrome.
+    # If you are still using Selenium instead of Playwright, you would instead install here the selenium package and a headless browser & webdriver
+    playwright \
+    && playwright install-deps \
+    && PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers playwright install chromium
+
+# Switch back to the superset user
+USER superset
+
 USER superset
 
 HEALTHCHECK CMD curl -f "http://localhost:${SUPERSET_PORT}/health"

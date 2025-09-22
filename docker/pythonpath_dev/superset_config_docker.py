@@ -22,6 +22,7 @@ FEATURE_FLAGS : dict[str, bool] = {
     "DASHBOARD_ASYNC_QUERIES": True,     # kicks the queries off into Celery
     "DASHBOARD_NATIVE_FILTERS": True,
     "ALERT_REPORTS": True,
+    "PLAYWRIGHT_REPORTS_AND_THUMBNAILS": True,
     "DATE_FORMAT_IN_EMAIL_SUBJECT": True
 }
 ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
@@ -117,6 +118,18 @@ SCREENSHOT_LOAD_WAIT = 600
 # WebDriver configuration
 # If you use Firefox, you can stick with default values
 # If you use Chrome, then add the following WEBDRIVER_TYPE and WEBDRIVER_OPTION_ARGS
+
+WEBDRIVER_TYPE = "chrome"
+WEBDRIVER_OPTION_ARGS = [
+    "--force-device-scale-factor=2.0",
+    "--high-dpi-support=2.0",
+    "--headless",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-extensions",
+]
 
 # This is for internal use, you can keep http
 WEBDRIVER_BASEURL = "http://superset_app:8088" # When running using docker compose use "http://superset_app:8088'
