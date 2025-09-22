@@ -140,6 +140,7 @@ jobs:
           script: |
             cd ~/jB-superset
             mv docker-compose-prod.yml docker-compose.yml
+            rm -rf docker
             mv min_docker docker
 
       - name: Create .env File on Server
