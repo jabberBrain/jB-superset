@@ -6,7 +6,7 @@ from superset.custom.models import CustomUser
 
 AUTH_ROLE_PUBLIC = 'Public'
 PUBLIC_ROLE_LIKE = 'Public'
-FAB_API_SWAGGER_UI = False
+FAB_API_SWAGGER_UI = True
 APP_NAME = os.environ.get("APP_NAME", "jabberBrain Dashboards")
 ENABLE_PROXY_FIX = True
 
@@ -36,14 +36,14 @@ SQLALCHEMY_ENGINE_OPTIONS = {
 
 # Email configuration
 SMTP_HOST = os.environ.get("SMTP_HOST")
-SMTP_PORT = os.environ.get("SMTP_PORT")
-SMTP_STARTTLS = os.environ.get("SMTP_TLS")
-SMTP_SSL_SERVER_AUTH = True # If you're using an SMTP server with a valid certificate
-SMTP_SSL = os.environ.get("SMTP_SSL")
+SMTP_PORT = int(os.environ.get("SMTP_PORT"))
+SMTP_STARTTLS = os.environ.get("SMTP_TLS").lower() == "true"
+SMTP_SSL_SERVER_AUTH = False
+SMTP_SSL = os.environ.get("SMTP_SSL").lower() == "true"
 SMTP_USER = os.environ.get("SMTP_USER")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
 SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
-EMAIL_REPORTS_SUBJECT_PREFIX = os.environ.get("EMAIL_REPORTS_SUBJECT", "Report") # optional - overwrites default value in config.py of "[Report] "
+EMAIL_REPORTS_SUBJECT_PREFIX = os.environ.get("EMAIL_REPORTS_SUBJECT", "Report")
 
 AUTH_USER_REGISTRATION = False  # User registration is handled from Authentik
 
@@ -134,6 +134,6 @@ WEBDRIVER_OPTION_ARGS = [
 # This is for internal use, you can keep http
 WEBDRIVER_BASEURL = "http://superset_app:8088" # When running using docker compose use "http://superset_app:8088'
 # This is the link sent to the recipient. Change to your domain, e.g. https://superset.mydomain.com
-WEBDRIVER_BASEURL_USER_FRIENDLY = "http://localhost:8088"
+WEBDRIVER_BASEURL_USER_FRIENDLY = "https://www.stats.jabberbrain.com"
 
 CELERY_CONFIG = CeleryConfig
