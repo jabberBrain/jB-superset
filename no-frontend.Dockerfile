@@ -9,7 +9,8 @@ ENV LANG=C.UTF-8 \
     FLASK_APP="superset.app:create_app()" \
     PYTHONPATH="/app/pythonpath" \
     SUPERSET_HOME="/app/superset_home" \
-    SUPERSET_PORT=8088
+    SUPERSET_PORT=8088 \
+    PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers
 
 RUN mkdir -p ${PYTHONPATH} superset/static requirements superset-frontend apache_superset.egg-info requirements \
     && useradd --user-group -d ${SUPERSET_HOME} -m --no-log-init --shell /bin/bash superset \
@@ -27,7 +28,6 @@ RUN mkdir -p ${PYTHONPATH} superset/static requirements superset-frontend apache
 
 COPY --chown=superset:superset pyproject.toml setup.py MANIFEST.in README.md ./
 
-
 # setup.py uses the version information in package.json
 COPY --chown=superset:superset superset-frontend/package.json superset-frontend/
 COPY --chown=superset:superset requirements/base.txt requirements/
@@ -36,6 +36,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       build-essential \
     && pip install --upgrade setuptools pip \
     && pip install -r requirements/base.txt \
+    && pip install pymssql Authlib openpyxl Pillow playwright \
+    && playwright install-deps \
+    && PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers playwright install chromium \
     && apt-get autoremove -yqq --purge build-essential \
     && rm -rf /var/lib/apt/lists/*
 
@@ -52,37 +55,6 @@ RUN ./scripts/translations/generate_mo_files.sh \
     && rm superset/translations/*/LC_MESSAGES/*.po
 
 COPY --chmod=755 ./docker/run-server.sh /usr/bin/
-
-USER root
-
-# Set environment variable for Playwright
-ENV PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers
-
-# Install packages using uv into the virtual environment
-# Superset started using uv after the 4.1 branch; if you are building from apache/superset:4.1.x or an older version,
-# replace the first two lines with RUN pip install \
-RUN . /app/.venv/bin/activate && \
-    uv pip install \
-    # install psycopg2 for using PostgreSQL metadata store - could be a MySQL package if using that backend:
-    psycopg2-binary \
-    # add the driver(s) for your data warehouse(s), in this example we're showing for Microsoft SQL Server:
-    pymssql \
-    # package needed for using single-sign on authentication:
-    Authlib \
-    # openpyxl to be able to upload Excel files
-    openpyxl \
-    # Pillow for Alerts & Reports to generate PDFs of dashboards
-    Pillow \
-    # install Playwright for taking screenshots for Alerts & Reports. This assumes the feature flag PLAYWRIGHT_REPORTS_AND_THUMBNAILS is enabled
-    # That feature flag will default to True starting in 6.0.0
-    # Playwright works only with Chrome.
-    # If you are still using Selenium instead of Playwright, you would instead install here the selenium package and a headless browser & webdriver
-    playwright \
-    && playwright install-deps \
-    && PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers playwright install chromium
-
-# Switch back to the superset user
-USER superset
 
 USER superset
 
