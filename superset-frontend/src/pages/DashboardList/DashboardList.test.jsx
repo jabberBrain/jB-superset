@@ -21,7 +21,7 @@ import thunk from 'redux-thunk';
 import configureStore from 'redux-mock-store';
 import fetchMock from 'fetch-mock';
 import * as reactRedux from 'react-redux';
-import * as uiCore from '@superset-ui/core';
+import { isFeatureEnabled } from '@superset-ui/core';
 
 import waitForComponentToPaint from 'spec/helpers/waitForComponentToPaint';
 import { styledMount as mount } from 'spec/helpers/theming';
@@ -47,6 +47,11 @@ const dashboardFavoriteStatusEndpoint =
   'glob:*/api/v1/dashboard/favorite_status*';
 const dashboardsEndpoint = 'glob:*/api/v1/dashboard/?*';
 const dashboardEndpoint = 'glob:*/api/v1/dashboard/*';
+
+jest.mock('@superset-ui/core', () => ({
+  ...jest.requireActual('@superset-ui/core'),
+  isFeatureEnabled: jest.fn(),
+}));
 
 const mockDashboards = [...new Array(3)].map((_, i) => ({
   id: i,
@@ -114,12 +119,12 @@ const store = mockStore({ user });
 const useSelectorMock = jest.spyOn(reactRedux, 'useSelector');
 
 describe('DashboardList', () => {
-  const isFeatureEnabledMock = jest
-    .spyOn(uiCore, 'isFeatureEnabled')
-    .mockImplementation(feature => feature === 'LISTVIEWS_DEFAULT_CARD_VIEW');
+  isFeatureEnabled.mockImplementation(
+    feature => feature === 'LISTVIEWS_DEFAULT_CARD_VIEW',
+  );
 
   afterAll(() => {
-    isFeatureEnabledMock.mockRestore();
+    isFeatureEnabled.mockRestore();
   });
 
   beforeEach(() => {
@@ -161,7 +166,7 @@ describe('DashboardList', () => {
     const callsD = fetchMock.calls(/dashboard\/\?q/);
     expect(callsD).toHaveLength(1);
     expect(callsD[0][0]).toMatchInlineSnapshot(
-      `"http://localhost/api/v1/dashboard/?q=(order_column:changed_on_delta_humanized,order_direction:desc,page:0,page_size:25,select_columns:!(id,dashboard_title,published,url,slug,changed_by,changed_on_delta_humanized,owners.id,owners.first_name,owners.last_name,owners,tags.id,tags.name,tags.type,status,certified_by,certification_details,changed_on))"`,
+      `"http://localhost/api/v1/dashboard/?q=(order_column:changed_on_delta_humanized,order_direction:desc,page:0,page_size:25,select_columns:!(id,dashboard_title,published,url,slug,changed_by,changed_by.id,changed_by.first_name,changed_by.last_name,changed_on_delta_humanized,owners,owners.id,owners.first_name,owners.last_name,tags.id,tags.name,tags.type,status,certified_by,certification_details,changed_on))"`,
     );
   });
 
@@ -236,17 +241,14 @@ describe('RTL', () => {
     return mounted;
   }
 
-  let isFeatureEnabledMock;
   beforeEach(async () => {
-    isFeatureEnabledMock = jest
-      .spyOn(uiCore, 'isFeatureEnabled')
-      .mockImplementation(() => true);
+    isFeatureEnabled.mockImplementation(() => true);
     await renderAndWait();
   });
 
   afterEach(() => {
     cleanup();
-    isFeatureEnabledMock.mockRestore();
+    isFeatureEnabled.mockRestore();
   });
 
   it('renders an "Import Dashboard" tooltip under import button', async () => {
