@@ -197,3 +197,5 @@ jobs:
             aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ vars.AWS_ECR_REGISTRY }};
             docker pull ${{ env.IMAGE_NAME }}
             docker-compose up -d --no-build
+            docker buildx prune -f
+            docker image prune -f
