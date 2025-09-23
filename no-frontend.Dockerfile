@@ -54,7 +54,7 @@ RUN ./scripts/translations/generate_mo_files.sh \
     && rm superset/translations/messages.pot \
     && rm superset/translations/*/LC_MESSAGES/*.po
 
-COPY --chmod=755 ./docker/run-server.sh /usr/bin/
+COPY --chmod=755 ./docker/entrypoints/run-server.sh /usr/bin/
 
 USER superset
 
