@@ -16,33 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { render, screen } from 'spec/helpers/testing-library';
-import Slider from '.';
 
-<<<<<<<< HEAD:superset-frontend/src/components/Slider/Slider.test.tsx
-const mockedProps = {
-  defaultValue: 90,
-  tooltip: {
-    open: true,
-  },
-};
-
-test('should render', () => {
-  const { container } = render(<Slider {...mockedProps} />);
-  expect(container).toBeInTheDocument();
-});
-
-test('should render with default value on tooltip', () => {
-  render(<Slider {...mockedProps} />);
-  expect(
-    screen.getAllByText(`${mockedProps.defaultValue}`)[0],
-  ).toBeInTheDocument();
-========
 import CartodiagramPlugin from '../../src/CartodiagramPlugin';
 
 describe('CartodiagramPlugin', () => {
   it('exists', () => {
     expect(CartodiagramPlugin).toBeDefined();
   });
->>>>>>>> 5.0.0:superset-frontend/plugins/plugin-chart-cartodiagram/test/plugin/index.test.ts
 });

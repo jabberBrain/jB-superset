@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,25 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-declare module 'dom-to-pdf' {
-  interface Image {
-    type: string;
-    quality: number;
-  }
 
-<<<<<<<< HEAD:superset-frontend/src/types/dom-to-pdf.d.ts
-  interface Options {
-    margin: number;
-    filename: string;
-    image: Image;
-    html2canvas: object;
-    excludeClassNames?: string[];
-  }
-
-  function domToPdf(elementToPrint: Element, options?: Options): Promise<any>;
-
-  export default domToPdf;
-========
 declare module '*.png' {
   const value: any;
   export default value;
@@ -43,5 +25,4 @@ declare module '*.png' {
 declare module '*.gif' {
   const value: any;
   export default value;
->>>>>>>> 5.0.0:superset-frontend/plugins/plugin-chart-cartodiagram/types/external.d.ts
 }
