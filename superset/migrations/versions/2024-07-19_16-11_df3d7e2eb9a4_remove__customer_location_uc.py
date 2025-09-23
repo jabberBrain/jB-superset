@@ -18,7 +18,7 @@
 Remove _customer_location_uc
 
 Revision ID: df3d7e2eb9a4
-Revises: 48cbb571fa3a
+Revises: ddb1e557dd93
 Create Date: 2024-07-19 16:11:26.740368
 """
 
@@ -32,7 +32,7 @@ from superset.utils.core import generic_find_uq_constraint_name
 
 # revision identifiers, used by Alembic.
 revision = "df3d7e2eb9a4"
-down_revision = "48cbb571fa3a"
+down_revision = "ddb1e557dd93"
 
 logger = logging.getLogger(__name__)
 

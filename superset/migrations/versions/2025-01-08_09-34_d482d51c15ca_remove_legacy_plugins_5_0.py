@@ -17,7 +17,7 @@
 """remove_legacy_plugins_5_0
 
 Revision ID: d482d51c15ca
-Revises: ddb1e557dd93
+Revises: eb1c288c71c4
 Create Date: 2025-01-08 09:34:57.533332
 
 """
@@ -37,7 +37,7 @@ from superset.migrations.shared.migrate_viz.processors import (
 
 # revision identifiers, used by Alembic.
 revision = "d482d51c15ca"
-down_revision = "ddb1e557dd93"
+down_revision = "eb1c288c71c4"
 
 
 def upgrade():

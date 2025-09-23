@@ -17,7 +17,7 @@
 """UUIDMixin
 
 Revision ID: 7b17aa722e30
-Revises: 48cbb571fa3a
+Revises: ddb1e557dd93
 Create Date: 2024-09-25 17:59:21.028426
 
 """
@@ -28,7 +28,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "7b17aa722e30"
-down_revision = "48cbb571fa3a"
+down_revision = "ddb1e557dd93"
 
 
 def upgrade():

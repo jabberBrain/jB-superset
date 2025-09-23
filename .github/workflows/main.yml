@@ -20,7 +20,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '^18.19.1'
+          node-version: '^20.16.0'
           cache: 'npm'
           cache-dependency-path: 'superset-frontend/package-lock.json'
 

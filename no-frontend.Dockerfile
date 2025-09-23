@@ -9,7 +9,8 @@ ENV LANG=C.UTF-8 \
     FLASK_APP="superset.app:create_app()" \
     PYTHONPATH="/app/pythonpath" \
     SUPERSET_HOME="/app/superset_home" \
-    SUPERSET_PORT=8088
+    SUPERSET_PORT=8088 \
+    PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers
 
 RUN mkdir -p ${PYTHONPATH} superset/static requirements superset-frontend apache_superset.egg-info requirements \
     && useradd --user-group -d ${SUPERSET_HOME} -m --no-log-init --shell /bin/bash superset \
@@ -35,6 +36,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       build-essential \
     && pip install --upgrade setuptools pip \
     && pip install -r requirements/base.txt \
+    && pip install pymssql Authlib openpyxl Pillow playwright \
+    && playwright install-deps \
+    && PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers playwright install chromium \
     && apt-get autoremove -yqq --purge build-essential \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,7 +53,6 @@ RUN ./scripts/translations/generate_mo_files.sh \
     && chown -R superset:superset superset/translations \
     && rm superset/translations/messages.pot \
     && rm superset/translations/*/LC_MESSAGES/*.po
-
 
 COPY --chmod=755 ./docker/entrypoints/run-server.sh /usr/bin/
 

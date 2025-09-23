@@ -59,21 +59,6 @@ else
   echo "Skipping local overrides"
 fi
 
-# Check if ENABLE_PLAYWRIGHT is set to true in .env file
-if [ "$ENABLE_PLAYWRIGHT" == "true" ]; then
-    echo "Installing Playwright dependencies and Chromium..."
-    apt-get update -qq && apt-get install -yqq --no-install-recommends \
-    build-essential \
-    && pip install pymssql Authlib openpyxl Pillow playwright \
-    && playwright install-deps \
-    && PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers playwright install chromium \
-    && apt-get autoremove -yqq --purge build-essential \
-    && rm -rf /var/lib/apt/lists/*
-    echo "Playwright + Chromium installed"
-else
-    echo "Skipping Playwright and Chromium installation (playwright not found in requirements-local.txt)"
-fi
-
 case "${1}" in
   worker)
     echo "Starting Celery worker..."
