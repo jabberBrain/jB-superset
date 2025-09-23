@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - update-*
 
 jobs:
   build-frontend:
@@ -41,7 +42,7 @@ jobs:
     environment: production
     runs-on: ubuntu-latest
     outputs:
-      image_name: ${{ steps.build-image.outputs.image }}
+      image_name: ${{ steps.set-image-name.outputs.image_name }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -72,23 +73,48 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Docker Image
-        id: build-image
+      - name: Set Image Name and Short SHA
+        id: set-image-name
         env:
           ECR_REGISTRY: ${{ vars.AWS_ECR_REGISTRY }}
           SHORT_SHA: ${{ github.sha }}
         run: |
           SHORT_SHA=$(echo $SHORT_SHA | cut -c 1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "image_name=$ECR_REGISTRY:$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - name: Check if Docker Image Exists in ECR
+        id: check-image
+        env:
+          ECR_REGISTRY: ${{ vars.AWS_ECR_REGISTRY }}
+          SHORT_SHA: ${{ steps.set-image-name.outputs.short_sha }}
+          IMAGE_NAME: ${{ steps.set-image-name.outputs.image_name }}
+
+        run: |
+          if docker manifest inspect $IMAGE_NAME >/dev/null 2>&1; then
+            echo "Image with tag $SHORT_SHA already exists in ECR."
+            echo "image_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Image with tag $SHORT_SHA does not exist in ECR."
+            echo "image_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and Push Docker Image
+        id: build-image
+        if: steps.check-image.outputs.image_exists == 'false'
+        env:
+          ECR_REGISTRY: ${{ vars.AWS_ECR_REGISTRY }}
+          IMAGE_NAME: ${{ steps.set-image-name.outputs.image_name }}
+        run: |
           docker buildx build \
           --file no-frontend.Dockerfile \
-          --tag $ECR_REGISTRY:$SHORT_SHA \
+          --tag $IMAGE_NAME \
           --tag $ECR_REGISTRY:latest \
-          --platform linux/arm64 \
+          --platform linux/arm64,linux/amd64 \
           --cache-to type=registry,ref=$ECR_REGISTRY:cache,mode=max \
           --cache-from type=registry,ref=$ECR_REGISTRY:cache \
           --push \
           .
-           echo "image=$ECR_REGISTRY:$SHORT_SHA" >> $GITHUB_OUTPUT
 
   deploy-to-ec2:
     name: Deploy Docker Image to Server
