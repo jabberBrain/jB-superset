@@ -9,6 +9,7 @@ log = logging.getLogger(__name__)
 class CustomSecurityManager(SupersetSecurityManager):
     user_model = CustomUser
     userdbmodelview = CustomUserDBModelView
+    useroauthmodelview = CustomUserDBModelView
 
     def oauth_user_info(self, provider, response=None):
         log.debug("OAuth2 provider: %s.", provider)
