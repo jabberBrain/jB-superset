@@ -144,17 +144,14 @@ OAUTH_PROVIDERS = [
     {
         "name": "authentik",
         "token_key": "access_token",
-        "icon": "fa-users",
+        "icon": "fa-fingerprint",
         "remote_app": {
             "client_id": os.environ.get("AUTHENTIK_CLIENT_ID"),
             "client_secret": os.environ.get("AUTHENTIK_CLIENT_SECRET"),
             "client_kwargs": {
-                "scope": "openid profile email"
+                "scope": "email profile openid entitlements virtual_assistants"
             },
-            "api_base_url": os.environ.get("AUTHENTIK_BASE_URL"),
-            "jwks_uri": os.environ.get("AUTHENTIK_BASE_URL") + os.environ.get("AUTHENTIK_SLUG") + "/jwks/",
-            "access_token_url": os.environ.get("AUTHENTIK_BASE_URL") + "token/",
-            "authorize_url": os.environ.get("AUTHENTIK_BASE_URL") + "authorize/"
+            "server_metadata_url": os.environ.get("AUTHENTIK_CONF_URL")
         },
     }
 ]
