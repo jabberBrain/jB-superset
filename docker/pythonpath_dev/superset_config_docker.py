@@ -45,8 +45,6 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
 SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
 EMAIL_REPORTS_SUBJECT_PREFIX = os.environ.get("EMAIL_REPORTS_SUBJECT", "Report")
 
-AUTH_USER_REGISTRATION = False  # User registration is handled from Authentik
-
 
 # Custom security manager
 import logging
@@ -135,5 +133,31 @@ WEBDRIVER_OPTION_ARGS = [
 WEBDRIVER_BASEURL = "http://superset_app:8088" # When running using docker compose use "http://superset_app:8088'
 # This is the link sent to the recipient. Change to your domain, e.g. https://superset.mydomain.com
 WEBDRIVER_BASEURL_USER_FRIENDLY = "https://www.stats.jabberbrain.com"
+
+AUTH_USER_REGISTRATION = True
+AUTH_USER_REGISTRATION_ROLE = "Admin"
+
+from flask_appbuilder.security.manager import AUTH_OAUTH
+
+AUTH_TYPE = AUTH_OAUTH
+OAUTH_PROVIDERS = [
+    {
+        "name": "authentik",
+        "token_key": "access_token",
+        "icon": "fa-users",
+        "remote_app": {
+            "client_id": os.environ.get("AUTHENTIK_CLIENT_ID"),
+            "client_secret": os.environ.get("AUTHENTIK_CLIENT_SECRET"),
+            "client_kwargs": {
+                "scope": "openid profile email"
+            },
+            "api_base_url": os.environ.get("AUTHENTIK_BASE_URL"),
+            "jwks_uri": os.environ.get("AUTHENTIK_BASE_URL") + os.environ.get("AUTHENTIK_SLUG") + "/jwks/",
+            "access_token_url": os.environ.get("AUTHENTIK_BASE_URL") + "token/",
+            "authorize_url": os.environ.get("AUTHENTIK_BASE_URL") + "authorize/"
+        },
+    }
+]
+
 
 CELERY_CONFIG = CeleryConfig

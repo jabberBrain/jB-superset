@@ -27,7 +27,7 @@ class CustomUserDBModelView(UserDBModelView):
     add_columns = UserDBModelView.add_columns[:]
     add_columns.append('solution_uuid')
     add_columns.append('jabberbrain_version')
-    
+
     list_columns = UserDBModelView.list_columns[:]
     list_columns.append('solution_uuid')
     list_columns.append('jabberbrain_version')
@@ -43,8 +43,7 @@ class CustomIndexView(IndexView):
     @expose("/")
     def index(self) -> FlaskResponse:
         if not g.user or not get_user_id():
-            return redirect(url_for('AuthDBView.login'))
-        
+            return redirect(url_for("AuthOAuthView.oauth_authorized", provider="authentik"))
         if security_manager.is_admin():
             return redirect(url_for(WELCOME_PAGE_REDIRECT_ADMIN))
         
