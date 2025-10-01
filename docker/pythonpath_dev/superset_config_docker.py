@@ -66,19 +66,11 @@ def current_user_solution_uuid():
     default_uuid = "no_solution"
     if g.user and hasattr(g.user, "solution_uuid"):
         return g.user.solution_uuid or default_uuid
-    
+
     return default_uuid
 
-def current_user_jabberbrain_version():
-    default_version = "1"
-    if g.user and hasattr(g.user, "jabberbrain_version"):
-        return g.user.jabberbrain_version or default_version
-    
-    return default_version
-
 JINJA_CONTEXT_ADDONS = {
-    'current_user_solution_uuid': current_user_solution_uuid,
-    'current_user_jabberbrain_version': current_user_jabberbrain_version
+    'current_user_solution_uuid': current_user_solution_uuid
 }
 
 

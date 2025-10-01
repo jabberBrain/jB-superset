@@ -6,4 +6,3 @@ from sqlalchemy import (
 class CustomUser(User):
     __tablename__ = "ab_user"
     solution_uuid = Column(String)
-    jabberbrain_version = Column(String)

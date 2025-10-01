@@ -11,7 +11,7 @@ from superset import security_manager
 
 log = logging.getLogger(__name__)
 
-class CustomUserDBModelView(UserDBModelView):
+class CustomUserDBModelView(UserDBModelView, UserOAuthModelView):
     """
     View that adds DB specifics to User view. Override to implement your own custom view.
     Then override userdbmodelview property on SecurityManager.
@@ -28,15 +28,12 @@ class CustomUserDBModelView(UserDBModelView):
 
     add_columns = UserDBModelView.add_columns
     add_columns.append('solution_uuid')
-    add_columns.append('jabberbrain_version')
 
     list_columns = UserDBModelView.list_columns
     list_columns.append('solution_uuid')
-    list_columns.append('jabberbrain_version')
 
     edit_columns = UserDBModelView.edit_columns
     edit_columns.append('solution_uuid')
-    edit_columns.append('jabberbrain_version')
 
     search_columns = UserDBModelView.search_columns
     edit_columns.append('solution_uuid')
@@ -48,7 +45,7 @@ class CustomIndexView(IndexView):
     @expose("/")
     def index(self) -> FlaskResponse:
         if not g.user or not get_user_id():
-            return redirect(url_for("AuthOAuthView.oauth_authorized", provider="authentik"))
+            return redirect(url_for("AuthOAuthView.login", provider="authentik"))
         if security_manager.is_admin():
             return redirect(url_for(WELCOME_PAGE_REDIRECT_ADMIN))
         

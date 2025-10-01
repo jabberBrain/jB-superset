@@ -16,8 +16,8 @@ class CustomSecurityManager(SupersetSecurityManager):
         user = self.appbuilder.sm.oauth_remotes[provider].userinfo()
         log.info("Parsed user data: %s", user)
 
-        va = user.get("virtual_assistants", [])
-        solution_uuid = ",".join(va) if isinstance(va, list) else str(va)
+        virtual_assistants = user.get("virtual_assistants", [])
+        solution_uuid = "*" if "*" in virtual_assistants else "(" + ",".join("'" + va + "'" for va in virtual_assistants) + ")"
         name = user.get("name", "")
         name_parts = name.strip().split() if name else []
         first_name = name_parts[0] if name_parts else user.get("email", "")
