@@ -1,13 +1,12 @@
 import logging
-from flask_appbuilder.security.views import UserDBModelView, UserOAuthModelView
+from flask_appbuilder.security.views import UserDBModelView, UserOAuthModelView, AuthOAuthView
 from flask_babel import lazy_gettext
 from flask_appbuilder import expose, IndexView
 from flask import redirect, g, url_for
 from superset.superset_typing import FlaskResponse
-from superset.utils.core import (
-    get_user_id,
-)
+from superset.utils.core import get_user_id
 from superset import security_manager
+import time
 
 log = logging.getLogger(__name__)
 
@@ -45,8 +44,20 @@ class CustomIndexView(IndexView):
     @expose("/")
     def index(self) -> FlaskResponse:
         if not g.user or not get_user_id():
-            return redirect(url_for("AuthOAuthView.login", provider="authentik"))
+            return redirect(url_for("CustomSsoAuthOAuthView.login", provider="authentik"))
+
         if security_manager.is_admin():
             return redirect(url_for(WELCOME_PAGE_REDIRECT_ADMIN))
-        
         return redirect(url_for(WELCOME_PAGE_REDIRECT_DEFAULT))
+
+class CustomSsoAuthOAuthView(AuthOAuthView):
+    @expose("/logout/")
+    def logout(self, provider="authentik"):
+        res = super().logout()
+        if provider is None:
+            return res
+
+        remote = self.appbuilder.sm.oauth_remotes[provider]
+        metadata = remote.load_server_metadata()
+        end_session_endpoint = metadata.get("end_session_endpoint")
+        return redirect(end_session_endpoint)

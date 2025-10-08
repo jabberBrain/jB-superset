@@ -36,7 +36,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       build-essential \
     && pip install --upgrade setuptools pip \
     && pip install -r requirements/base.txt \
-    && pip install pymssql Authlib openpyxl Pillow playwright \
+    && pip install pymssql openpyxl Pillow playwright \
     && playwright install-deps \
     && PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers playwright install chromium \
     && apt-get autoremove -yqq --purge build-essential \

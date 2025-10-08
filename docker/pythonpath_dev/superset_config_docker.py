@@ -127,7 +127,7 @@ WEBDRIVER_BASEURL = "http://superset_app:8088" # When running using docker compo
 WEBDRIVER_BASEURL_USER_FRIENDLY = "https://www.stats.jabberbrain.com"
 
 AUTH_USER_REGISTRATION = True
-AUTH_USER_REGISTRATION_ROLE = "Admin"
+AUTH_USER_REGISTRATION_ROLE = "Public"
 
 from flask_appbuilder.security.manager import AUTH_OAUTH
 
@@ -141,12 +141,11 @@ OAUTH_PROVIDERS = [
             "client_id": os.environ.get("AUTHENTIK_CLIENT_ID"),
             "client_secret": os.environ.get("AUTHENTIK_CLIENT_SECRET"),
             "client_kwargs": {
-                "scope": "email profile openid entitlements virtual_assistants"
+                "scope": "email openid entitlements virtual_assistants"
             },
             "server_metadata_url": os.environ.get("AUTHENTIK_CONF_URL")
         },
     }
 ]
-
 
 CELERY_CONFIG = CeleryConfig
