@@ -141,7 +141,7 @@ OAUTH_PROVIDERS = [
             "client_id": os.environ.get("AUTHENTIK_CLIENT_ID"),
             "client_secret": os.environ.get("AUTHENTIK_CLIENT_SECRET"),
             "client_kwargs": {
-                "scope": "email openid entitlements virtual_assistants"
+                "scope": "email openid profile entitlements virtual_assistants"
             },
             "server_metadata_url": os.environ.get("AUTHENTIK_CONF_URL")
         },
