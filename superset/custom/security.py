@@ -21,8 +21,8 @@ class CustomSecurityManager(SupersetSecurityManager):
         solution_uuid = "(" + ",".join("'" + va + "'" for va in virtual_assistants) + ")"
         name = user.get("name", "")
         name_parts = name.strip().split() if name else []
-        first_name = name_parts[0] if name_parts else user.get("email", "")
-        last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+        first_name = name_parts[0] if name_parts else "First"
+        last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else "Last"
         roles = user.get("roles", [])
 
         log.info("THE USER ROLES ARE: %s", roles)
@@ -30,8 +30,7 @@ class CustomSecurityManager(SupersetSecurityManager):
         # Extract required fields from userinfo
         return {
             "email": user.get("email", ""),
-            "id": user.get("sub", ""),
-            "username": user.get("preferred_username", ""),
+            "username": user.get("email", ""),
             "first_name": first_name,
             "last_name": last_name,
             "solution_uuid": solution_uuid,
