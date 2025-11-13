@@ -12,7 +12,7 @@ ENABLE_PROXY_FIX = True
 
 # Specify the App icon
 APP_ICON = "/static/jb_assets/images/jB_logo_blue.svg"
-LOGO_TARGET_PATH = "/"
+LOGO_TARGET_PATH = os.getenv("LOGO_TARGET_PATH", "/")
 FAVICONS = [{"href": "/static/jb_assets/images/jB_icon_blue.svg"}]
 
 FEATURE_FLAGS : dict[str, bool] = {
