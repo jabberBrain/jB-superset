@@ -10,6 +10,7 @@ FAB_API_SWAGGER_UI = True
 APP_NAME = os.environ.get("APP_NAME", "jabberBrain Dashboards")
 ENABLE_PROXY_FIX = True
 
+TALISMAN_ENABLED = False
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = "None"
 
