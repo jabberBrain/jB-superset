@@ -10,6 +10,9 @@ FAB_API_SWAGGER_UI = True
 APP_NAME = os.environ.get("APP_NAME", "jabberBrain Dashboards")
 ENABLE_PROXY_FIX = True
 
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "None"
+
 # Specify the App icon
 APP_ICON = "/static/jb_assets/images/jB_logo_blue.svg"
 LOGO_TARGET_PATH = os.getenv("LOGO_TARGET_PATH", "/")
