@@ -2,6 +2,7 @@ import logging
 from superset.security.manager import SupersetSecurityManager
 from superset.custom.models import CustomUser
 from superset.custom.views import CustomUserDBModelView, CustomSsoAuthOAuthView
+from superset.custom.role_ownership import decide_role_sync
 from superset import db
 
 log = logging.getLogger(__name__)
@@ -56,11 +57,40 @@ class CustomSecurityManager(SupersetSecurityManager):
         user.last_name = userinfo.get("last_name", user.last_name)
         user.solution_uuid = userinfo.get("solution_uuid", "")
 
-        user.roles = [ role
-            for role in (
-                self.find_role(rn) for rn in userinfo.get("roles", [])
-            ) if role
-        ]
+        # ⛔ Authentik SEEDS the roles; it does not own them.
+        #
+        # This used to be an unconditional `user.roles = [...]` on every single
+        # login, so a role set in Superset was reverted the next time the person
+        # signed in — and once jBKB writes roles here, it would revert those too.
+        # AIM had the same line and it was watched happen live.
+        #
+        # PHASE 1 OF TWO: the seed goes away as well, once the role data is
+        # curated in jBKB and jBKB creates the account itself. See
+        # superset/custom/role_ownership.py.
+        token_roles = [rn for rn in userinfo.get("roles", []) if rn]
+        stored_roles = [r.name for r in (user.roles or [])]
+        decision = decide_role_sync(stored_roles, token_roles)
+
+        if decision == "adopt":
+            resolved = [r for r in (self.find_role(rn) for rn in token_roles) if r]
+            # find_role returns None for a role that does not exist in Superset.
+            # Adopting the empty remainder would leave the user with no roles at
+            # all, so keep what they have and say which names did not resolve.
+            if resolved:
+                user.roles = resolved
+            else:
+                log.warning(
+                    "Insight Hub: none of the Authentik roles %s exist in Superset; "
+                    "leaving %s as %s.",
+                    token_roles, user.email, stored_roles or ["(none)"],
+                )
+        elif decision == "diverged":
+            # Expected the moment an administrator changes a role. Information,
+            # not a fault — but worth being able to find in the log later.
+            log.info(
+                "Insight Hub: keeping stored roles %s for %s; Authentik offered %s.",
+                stored_roles, user.email, token_roles,
+            )
 
         self.update_user(user)
         return user

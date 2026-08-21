@@ -7,6 +7,21 @@ from superset.custom.models import CustomUser
 AUTH_ROLE_PUBLIC = 'Public'
 PUBLIC_ROLE_LIKE = 'Public'
 FAB_API_SWAGGER_UI = True
+
+# The REST API for user and role management: /api/v1/security/users/ and
+# /api/v1/security/roles/. Off by default in Superset (docs/security.mdx), which
+# is why jBKB could grant somebody Insight Hub access and then had no way to say
+# what they should be able to see once they got there.
+#
+# jBKB owns role and assignment; this is the door it writes through. Reached with
+# a service account — an ab_user with a password and a role carrying only the
+# security permissions — via /api/v1/security/login with provider "db", which
+# works alongside AUTH_OAUTH because it is a different entry point, not a
+# different AUTH_TYPE.
+#
+# CVE-2024-53949 (lower-privilege users could create roles with this enabled)
+# was fixed in Flask-AppBuilder 4.1.0; we pin >= 4.5.5.
+FAB_ADD_SECURITY_API = True
 APP_NAME = os.environ.get("APP_NAME", "jabberBrain Dashboards")
 ENABLE_PROXY_FIX = True
 

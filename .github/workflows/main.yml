@@ -124,6 +124,47 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # The Insight Hub box is the Datalake machine and gets STOPPED to save
+      # money. Every step after this one is SSH, so a stopped box failed the
+      # deploy at the copy step — after the image had already been built and
+      # pushed, which made it look like a Docker problem.
+      #
+      # ⛔ The instance has no Elastic IP, so a stop/start gives it a NEW public
+      # address and `secrets.HOST` goes stale. Starting it is therefore only half
+      # the fix: the run also PRINTS the current address, so whoever finds a
+      # failed SSH step below can see immediately that the secret (and the
+      # Cloudflare origin record for stats.jabberbrain.com) needs updating,
+      # rather than debugging the key.
+      - name: Ensure the Insight Hub box is running
+        env:
+          INSTANCE_ID: ${{ vars.BI_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${INSTANCE_ID:-}" ]; then
+            echo "::warning::BI_INSTANCE_ID is not set as a repository variable — skipping the wake step."
+            exit 0
+          fi
+          state=$(aws ec2 describe-instances --region "${{ vars.AWS_REGION }}" --instance-ids "$INSTANCE_ID" \
+            --query 'Reservations[0].Instances[0].State.Name' --output text)
+          echo "instance state: $state"
+          if [ "$state" != "running" ]; then
+            echo "starting $INSTANCE_ID …"
+            aws ec2 start-instances --region "${{ vars.AWS_REGION }}" --instance-ids "$INSTANCE_ID" >/dev/null
+            aws ec2 wait instance-running --region "${{ vars.AWS_REGION }}" --instance-ids "$INSTANCE_ID"
+            echo "::warning::The box was stopped and has been started. It has no Elastic IP, so its public address has changed."
+          fi
+          ip=$(aws ec2 describe-instances --region "${{ vars.AWS_REGION }}" --instance-ids "$INSTANCE_ID" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "current public address: $ip"
+          echo "If the SSH steps below fail, set the HOST secret to $ip and point the Cloudflare record for stats.jabberbrain.com at it."
+
       - name: Create min_docker Folder
         run: |
           mkdir min_docker
