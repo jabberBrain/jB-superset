@@ -236,6 +236,11 @@ jobs:
             cd ~/jB-superset
             aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ vars.AWS_ECR_REGISTRY }};
             docker pull ${{ env.IMAGE_NAME }}
-            docker-compose up -d --no-build
+            # ⛔ `docker compose`, not `docker-compose`. The v1 binary was removed
+            # from the box by the 2026-06-11 OS update, which also wiped ec2-user's
+            # docker group membership — so a workflow that last deployed cleanly in
+            # November 2025 failed with "docker-compose: command not found" and a
+            # permission denied on /var/run/docker.sock. Only the v2 plugin remains.
+            docker compose up -d --no-build
             docker buildx prune -f
             docker image prune -f
