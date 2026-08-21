@@ -1,85 +1,42 @@
 """
-Who owns an Insight Hub user's roles.
-
-The rule jabberBrain runs on (Johan, 2026-08-20):
+Who owns an Insight Hub user's roles. Short answer: not Authentik.
 
     Authentik owns identity and app access; jBKB owns role and assignment.
 
-⛔ THIS IS PHASE 1 OF TWO, AND THE DISTINCTION MATTERS.
+⛔ PHASE 2 OF TWO. Phase 1 (``ih-stop-overwrite``) stopped Authentik OVERWRITING
+roles on every login but let it still SEED them. This removes the seed, which is
+the difference between 90% of the rule and 100% of it: seeding still lets
+Authentik decide the role of anyone who signs in before jBKB has set one, and it
+keeps the ``role/ih/*`` groups load-bearing — the very groups being retired, one
+user at a time, by ``convertToDirectAccess``.
 
-  * **Phase 1 (here).** Authentik stops OVERWRITING roles. It still SEEDS them:
-    a user with nothing stored takes what the token offers, and after that the
-    stored roles win.
+So the OAuth token contributes identity (name, email) and access scope
+(``solution_uuid``, from ``virtual_assistants``). It contributes NOTHING to
+roles, ever.
 
-  * **Phase 2 (later).** Authentik seeds nothing either, because jBKB creates
-    the Superset account with its roles at Save. That is the rule at 100% —
-    seeding still lets Authentik decide for anyone who signs in before jBKB has
-    set a role, and it keeps the ``role/ih/*`` groups load-bearing when the
-    whole point is retiring them.
+## ⛔ Do not merge this before the prerequisites
 
-Phase 2 waits on the Insight Hub role data being curated in jBKB and the
-``role/ih/*`` groups being cleaned up in Authentik. Doing it first would leave
-the **7 people who hold ``application/ih`` today and have never opened Insight
-Hub** (audited 2026-08-21) landing on a Superset that shows them nothing.
+Audited 2026-08-21: **7 people hold ``application/ih`` and have never opened
+Insight Hub**. Under phase 1 they get their ``role/ih/advanced`` role at first
+login. Without the seed they arrive with the bare ``Public`` that
+``create_new_user`` hands out, and see nothing.
 
-## What phase 1 fixes
+That gap is closed on the OTHER side, not here: jBKB creates the Superset
+account WITH its roles, via ``POST /api/v1/security/users/`` (knowledge_builder
+``services/superset-client.ts``, ``docs/user-provisioning.md`` §9) — the same
+way it already creates AIM users. So this branch is safe to merge only once:
 
-``auth_user_oauth`` did ``user.roles = [...token]``, unconditionally, on EVERY
-login. Anything set in Superset's own Security screen was reverted the next time
-that person signed in — and jBKB is about to start writing roles here.
+  1. jBKB has the Insight Hub service account configured and working, and
+  2. the Insight Hub role data has been curated in jBKB, and
+  3. the ``role/ih/*`` groups have been cleaned up in Authentik.
 
-AIM had the identical line until 2026-08-15 and it had to be watched happen in
-production before anyone believed it: a role corrected at 18:00 was back to its
-old value by 18:12, one login later. ``role-ownership.ts`` in AIM-backend is the
-same decision in TypeScript.
-
-## What it changes for real people — one person, checked
-
-Audited against the live Superset database on 2026-08-21: every account's stored
-roles already equal what the token would send, EXCEPT one. That user's Authentik
-groups changed after her last login (2025-09-26), so today's build would
-downgrade her at her next sign-in and this one will not. Everybody else is
-unaffected, and nobody has opened Insight Hub since 2025-10-21.
-
-Divergence is expected the moment an administrator changes a role, so it is
-logged rather than treated as an error — it is information, not a fault.
+Anyone left over after that — access granted, never signed in, never provisioned
+by jBKB — shows in the jBKB Users list as Insight Hub access with no role.
+Visible and fixable beats silently decided elsewhere.
 """
 
 from __future__ import annotations
 
-from typing import Iterable
-
-#: The role FAB hands out on registration. Not a decision anyone made.
+#: The role FAB hands out on registration. Not a decision anyone made, and the
+#: reason "has a role" is not the same question as "has roles beyond Public".
 SEED_ROLE = "Public"
-
-
-def decide_role_sync(
-    stored_roles: Iterable[str],
-    token_roles: Iterable[str],
-) -> str:
-    """Return ``"adopt"``, ``"keep"`` or ``"diverged"``.
-
-    ``adopt``    — nothing meaningful stored yet; take what Authentik sent.
-    ``keep``     — the two agree, or Authentik offered nothing. Do nothing.
-    ``diverged`` — they disagree. The STORED roles win.
-
-    Order is not significance: a user holding ``{Alpha, Gamma}`` is the same
-    user whichever way the two systems happen to list them.
-    """
-    stored = {r for r in stored_roles if r}
-    token = {r for r in token_roles if r}
-
-    # ⛔ Authentik offered nothing. There is no such thing as "adopt nothing":
-    # that would strip the user to zero roles, which is strictly worse than the
-    # Public they were registered with, and it is what a missing property
-    # mapping or a dropped scope looks like. Absence is not an instruction.
-    if not token:
-        return "keep"
-    # ⛔ Public alone is not an assignment. `create_new_user` gives it to every
-    # account it makes, so reading it as deliberate would mean Authentik's roles
-    # were never adopted at all and every new user landed able to see nothing.
-    if not stored or stored == {SEED_ROLE}:
-        return "adopt"
-    if stored == token:
-        return "keep"
-    return "diverged"

@@ -2,7 +2,6 @@ import logging
 from superset.security.manager import SupersetSecurityManager
 from superset.custom.models import CustomUser
 from superset.custom.views import CustomUserDBModelView, CustomSsoAuthOAuthView
-from superset.custom.role_ownership import decide_role_sync
 from superset import db
 
 log = logging.getLogger(__name__)
@@ -57,40 +56,16 @@ class CustomSecurityManager(SupersetSecurityManager):
         user.last_name = userinfo.get("last_name", user.last_name)
         user.solution_uuid = userinfo.get("solution_uuid", "")
 
-        # ⛔ Authentik SEEDS the roles; it does not own them.
+        # ⛔ THE TOKEN DOES NOT SET ROLES. Not on every login (which is what
+        # this used to do, reverting anything set in Superset), and not even
+        # once as a seed. Authentik owns identity and access; jBKB owns role and
+        # assignment, and jBKB writes them through the security API.
         #
-        # This used to be an unconditional `user.roles = [...]` on every single
-        # login, so a role set in Superset was reverted the next time the person
-        # signed in — and once jBKB writes roles here, it would revert those too.
-        # AIM had the same line and it was watched happen live.
+        # `solution_uuid` above is NOT an exception — that is the VA access
+        # scope, which is access, and access is Authentik's.
         #
-        # PHASE 1 OF TWO: the seed goes away as well, once the role data is
-        # curated in jBKB and jBKB creates the account itself. See
-        # superset/custom/role_ownership.py.
-        token_roles = [rn for rn in userinfo.get("roles", []) if rn]
-        stored_roles = [r.name for r in (user.roles or [])]
-        decision = decide_role_sync(stored_roles, token_roles)
-
-        if decision == "adopt":
-            resolved = [r for r in (self.find_role(rn) for rn in token_roles) if r]
-            # find_role returns None for a role that does not exist in Superset.
-            # Adopting the empty remainder would leave the user with no roles at
-            # all, so keep what they have and say which names did not resolve.
-            if resolved:
-                user.roles = resolved
-            else:
-                log.warning(
-                    "Insight Hub: none of the Authentik roles %s exist in Superset; "
-                    "leaving %s as %s.",
-                    token_roles, user.email, stored_roles or ["(none)"],
-                )
-        elif decision == "diverged":
-            # Expected the moment an administrator changes a role. Information,
-            # not a fault — but worth being able to find in the log later.
-            log.info(
-                "Insight Hub: keeping stored roles %s for %s; Authentik offered %s.",
-                stored_roles, user.email, token_roles,
-            )
+        # superset/custom/role_ownership.py has the argument, and the
+        # prerequisites that must be met before this branch is merged.
 
         self.update_user(user)
         return user

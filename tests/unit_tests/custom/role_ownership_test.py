@@ -1,60 +1,69 @@
 """
-Authentik seeds Insight Hub roles; Superset keeps them.
+The OAuth token must never write a user's roles.
 
-⛔ The case worth pinning is the SECOND LOGIN. The defect this replaces was not
-visible on login one — Authentik's roles were applied and everything looked
-right. It showed up when someone changed a role and the next sign-in put it
-back. So every test here is really the same question asked twice: what happens
-when the token and the database disagree?
+⛔ THIS IS A STRUCTURAL TEST ON PURPOSE, and it is the only kind that can catch
+this regression. The defect it guards is one line —
 
-Checked against the live Superset database on 2026-08-21: every account's stored
-roles already equal what the token sends, except one user whose Authentik groups
-changed after her last login. She is the only person this deploy moves, and it
-moves her by leaving her alone.
+    user.roles = [role for role in (...userinfo["roles"]) if role]
+
+— sitting in ``auth_user_oauth``, and it is INVISIBLE at first login: Authentik's
+roles get applied and everything looks right. It only shows on the SECOND login,
+when a role set from jBKB is quietly reverted. AIM had the identical line and it
+had to be watched happen in production before anyone believed it (a role
+corrected at 18:00 was back by 18:12).
+
+A behavioural test would need a Flask app, a database and a security manager
+just to assert that nothing happened. Reading the AST is direct: whatever else
+that method does, it does not assign to ``user.roles``.
+
+Authentik owns identity and app access; jBKB owns role and assignment. Roles are
+written through Superset's security API, by jBKB, and by nothing else.
 """
 
-import pytest
+import ast
+import pathlib
 
-from superset.custom.role_ownership import decide_role_sync
-
-
-def test_a_brand_new_user_takes_authentiks_roles():
-    assert decide_role_sync([], ["Alpha"]) == "adopt"
+SECURITY_PY = pathlib.Path(__file__).parents[3] / "superset" / "custom" / "security.py"
 
 
-def test_public_alone_is_not_an_assignment():
-    # ⛔ create_new_user gives every account Public, so nobody is ever literally
-    # role-less. Reading that as a deliberate choice would mean Authentik's
-    # roles were never adopted and new users landed able to see nothing.
-    assert decide_role_sync(["Public"], ["Alpha"]) == "adopt"
+def _method(name: str) -> ast.FunctionDef:
+    tree = ast.parse(SECURITY_PY.read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return node
+    raise AssertionError(f"{name} is gone from CustomSecurityManager")
 
 
-def test_public_alongside_a_real_role_is_an_assignment():
-    assert decide_role_sync(["Public", "Alpha"], ["Gamma"]) == "diverged"
+def _assigned_attributes(fn: ast.FunctionDef) -> set:
+    """Every ``something.attr`` this method writes to."""
+    out = set()
+    for node in ast.walk(fn):
+        targets = []
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, (ast.AugAssign, ast.AnnAssign)):
+            targets = [node.target]
+        for t in targets:
+            if isinstance(t, ast.Attribute) and isinstance(t.value, ast.Name):
+                out.add(f"{t.value.id}.{t.attr}")
+    return out
 
 
-def test_agreement_is_a_no_op():
-    assert decide_role_sync(["Advanced"], ["Advanced"]) == "keep"
+def test_the_token_does_not_write_roles():
+    assert "user.roles" not in _assigned_attributes(_method("auth_user_oauth"))
 
 
-def test_order_is_not_significance():
-    # Same user either way. Authentik and Superset have no reason to agree on
-    # the order of a set, and a false "diverged" would spam the log forever.
-    assert decide_role_sync(["Admin", "Advanced"], ["Advanced", "Admin"]) == "keep"
+def test_the_token_still_writes_identity_and_access_scope():
+    # The counterpart. Authentik DOES own these — name and email are identity,
+    # solution_uuid is the VA access scope — so an over-eager fix that stopped
+    # the method writing anything at all would be just as wrong, and this test
+    # would go red instead of passing quietly.
+    written = _assigned_attributes(_method("auth_user_oauth"))
+    assert {"user.email", "user.first_name", "user.last_name", "user.solution_uuid"} <= written
 
 
-def test_the_stored_roles_win_when_they_disagree():
-    # The real row, from the 2026-08-21 audit: Authentik says builder +
-    # jb_supervisor, Superset stores Admin + Advanced, because her groups
-    # changed after her last login. Today's build would downgrade her at the
-    # next sign-in. This one leaves her as she is.
-    assert decide_role_sync(["Admin", "Advanced"], ["Builder", "jb_supervisor"]) == "diverged"
-
-
-@pytest.mark.parametrize("token", [[], [""], None])
-def test_an_empty_token_never_strips_a_user(token):
-    # ⛔ A missing property mapping or a dropped scope looks exactly like this.
-    # "Adopt nothing" would leave the user with zero roles — strictly worse than
-    # the Public they registered with. Absence is not an instruction.
-    assert decide_role_sync(["Admin"], token or []) == "keep"
-    assert decide_role_sync([], token or []) == "keep"
+def test_a_self_registered_user_still_lands_somewhere_defined():
+    # Superset self-creates an account for anyone with application/ih access who
+    # signs in before jBKB provisioned them. They must get Public rather than
+    # nothing — an account with zero roles cannot even render the landing page.
+    assert "Public" in ast.unparse(_method("create_new_user"))
